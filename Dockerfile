@@ -134,7 +134,6 @@ RUN cd ~/ffmpeg_sources && \
   --bindir="$HOME/bin" \
   --enable-gpl \
   --enable-libfdk_aac \
-  --enable-libfreetype \
   --enable-libmp3lame \
   --enable-libopus \
   --enable-libvorbis \
