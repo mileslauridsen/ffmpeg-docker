@@ -1,5 +1,5 @@
 #Download base image centos 7
-FROM centos:centos7
+FROM centos:centos7 AS compile-image
 
 ENV PATH="/root/bin:${PATH}"
 
@@ -149,6 +149,12 @@ RUN cd ~/ffmpeg_sources && \
 
 # Remove source directory and clean yum
 RUN	rm -r ~/ffmpeg_sources && \
+    rm -r ~/ffmpeg_build && \
 	yum -y remove cmake gcc gcc-c++ git make mercurial hg && \
 	yum -y clean all && \
 	rm -rf /var/cache/yum
+
+FROM centos:centos7 AS runtime-image
+
+COPY --from=compile-image /root/bin /root/bin
+ENV PATH=/root/bin:$PATH
