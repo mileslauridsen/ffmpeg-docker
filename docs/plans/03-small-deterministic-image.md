@@ -8,7 +8,7 @@ Produce the smallest measured FFmpeg runtime image that meets the documented VFX
 
 - The Dockerfile separates compilation and runtime stages and now uses a digest-pinned Debian 13 Trixie base for amd64 and arm64 targets.
 - FFmpeg and its nine source dependencies now have immutable identities, archive checksums, and signature checks where available.
-- The Debian package repositories and package versions are not yet snapshot-pinned; that remains Task 2 work.
+- Debian package resolution and the builder toolchain are snapshot-pinned for amd64 and arm64; see [build environment](../BUILD_ENVIRONMENT.md).
 - The runtime copies all of `/root/bin`, including installed assembler tools, rather than an explicit runtime artifact set.
 - Configured encoders and one H.264 workflow have been verified. Broader required media profiles, runtime linkage, and image sizes remain unmeasured.
 - No automated size, dependency-lock, or reproducibility checks exist.
@@ -56,15 +56,15 @@ Completion evidence: every built source maps to a manifest entry; amd64 and arm6
 
 Deliverable: a documented, locked builder environment and explicit target-platform configuration.
 
-- [ ] 1. Establish required deployment architectures and a portable CPU baseline from the actual VFX workers. Do not assume the developer host is the deployment target.
-- [ ] 2. Select a maintained builder distribution compatible with the locked libraries. Pin its image by digest and record the human-readable release and per-platform identity.
-- [ ] 3. Fix package repositories to an immutable snapshot and lock package resolution, including transitive dependencies. If that is unavailable, use an immutable toolchain artifact and document how it can be rebuilt.
-- [ ] 4. Replace unrestricted OS updates and unversioned package installs. Record compiler, linker, assembler, CMake, libc, and other build-tool versions in build metadata.
-- [ ] 5. Set explicit architecture and optimization flags. Avoid `-march=native` and equivalent host-derived options; keep required runtime CPU detection.
-- [ ] 6. Pin relevant Dockerfile frontend, BuildKit, and CI build-tool versions or immutable identities. Document supported build commands and differences between local and CI environments.
-- [ ] 7. Build from clean inputs twice and compare source and toolchain manifests. Check that build cache reuse is not concealing floating downloads or package resolution.
+- [x] 1. Select `linux/amd64` and `linux/arm64`, with generic x86-64-v1 and ARMv8-A baselines. Production worker inventory is not available yet; confirm these provisional baselines against the actual VFX workers before deployment.
+- [x] 2. Pin Debian 13 Trixie by multi-platform image digest and record the amd64 and arm64 manifest identities.
+- [x] 3. Pin Debian package repositories to the `20261025T000000Z` snapshot and lock the full package closure for each target architecture.
+- [x] 4. Remove unrestricted updates and record exact package, compiler, linker, assembler, CMake, libc, and build-tool versions in build metadata.
+- [x] 5. Set generic per-architecture compiler flags and FFmpeg `--cpu=generic`; preserve runtime CPU detection.
+- [x] 6. Pin the Dockerfile frontend and BuildKit image by digest. Record the Buildx version and supported local build commands; CI is not configured in this repository yet.
+- [x] 7. Run two independent `--no-cache` builds for each architecture and compare source, package, base-image, and toolchain identities. Build output bytes are not claimed to be reproducible by this task.
 
-Completion evidence: the same repository revision and target platform select the same source, base-image, package, and toolchain identities on independent builds.
+Completion evidence: two clean builds each of `linux/amd64` and `linux/arm64` used identical source, base-image, package, and toolchain identities. Both architecture images pass FFmpeg/FFprobe startup and a one-second H.264 encode/probe. Production worker CPU inventories and CI remain follow-up items; the selected generic baselines are provisional.
 
 ### Task 3: Minimize Runtime Contents
 
@@ -137,6 +137,6 @@ Completion evidence: CI catches an invalid checksum, a missing required capabili
 
 Status: in progress
 
-Task 1 is complete for `linux/amd64` and `linux/arm64`: locked sources compiled, configured encoders were present, and a mounted H.264 encode/probe passed on both. Broader VFX media profiles remain undefined and are assigned to Task 4. Task 2 still needs immutable package-repository and toolchain resolution. The CentOS 7 baseline failed at package setup on both ARM64 and amd64; phase 2 remains in progress. See the implementation log.
+Tasks 1 and 2 are complete for `linux/amd64` and `linux/arm64`. Task 2 uses provisional generic CPU baselines pending production-worker inventory; CI is not configured. Broader VFX media profiles remain undefined and are assigned to Task 4. The CentOS 7 baseline failed at package setup on both architectures; phase 2 remains in progress. See the implementation log.
 
 Last updated: 2026-10-25

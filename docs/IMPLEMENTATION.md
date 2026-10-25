@@ -2,6 +2,35 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-25: Pin The Build Environment
+
+Request:
+
+- Complete phase 3 Task 2 for the amd64 and arm64 targets.
+
+Decision:
+
+- Pin Debian 13 Trixie to multi-platform index `sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad`, record both platform manifest identities, and resolve package installation from Debian snapshot `20261025T000000Z`.
+- Lock the complete installed package sets and versions per platform. The runtime stage uses Bash from the pinned base and does not perform package installation.
+- Select provisional generic CPU baselines: x86-64-v1 for amd64 (`-march=x86-64 -mtune=generic`) and ARMv8-A for arm64 (`-march=armv8-a -mtune=generic`). FFmpeg uses `--cpu=generic` and keeps runtime CPU detection enabled. Production worker CPU inventory remains a follow-up.
+- Pin the Dockerfile frontend and BuildKit image by digest, and document the Buildx version and local multi-platform commands. This repository has no CI workflow; CI pinning will be applied when CI is introduced.
+
+Affected areas:
+
+- Dockerfile, per-platform APT package lists and resolved manifests, APT verifier, toolchain lock, build-environment guide, README, phase 3 plan, roadmap, and this log.
+
+Validation:
+
+- Created a Buildx builder using `moby/buildkit:v0.33.1` pinned to index digest `sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea`; bootstrap reported BuildKit v0.33.1 with amd64 and arm64 support.
+- Completed two independent `--no-cache` builds for each target. Resolved package manifest hashes were stable: amd64 `c29676accb29e3cb1d4bf5538e9fbb1e457618eb91f20bbf486863a08a91d5c0` (208 packages); arm64 `96c84483a3eb10214008e4b1e72a890773fad6779002b97f596be8c1f2562800` (207 packages). Source lock hash: `9ba39352cc780ddf78427adcf44b78e6c9f540c66c099955bedae33fd9341724`; toolchain lock hash: `357d6ada8e729f4928626becfc8e359a7caafee47ea2023586cf065b3058871a`.
+- Build image identities were amd64 `sha256:3c5962bbeca8509f17864a054d7f956ecdb07ae4e2cbb25c058edd05c4905262` and repeat `sha256:dff728a842310d6a290a6815a518621167710514690d2b70764b1848ff7ac373`; arm64 `sha256:f725177a158679cdc35b4ce9026a8803a7348c6edf582fb444a91c2d2dd385d5` and repeat `sha256:2581e6731c76dcca03feac689fc5174446acc81f4e3ebc9315e709731beb1518`.
+- FFmpeg and FFprobe report 8.1.3 on both platforms. On each architecture, a one-second 128x128, 24 fps H.264 smoke encode succeeded and FFprobe confirmed codec, dimensions, frame rate, and duration. The two amd64 clean builds emitted non-fatal upstream compiler warnings; neither build failed.
+- `git diff --check`, Python syntax parsing for the APT verifier, and JSON parsing of the toolchain lock passed. Build output bytes and image-digest equality are not claimed by Task 2.
+
+Follow-up:
+
+- Confirm the provisional CPU baselines against actual production workers. Pin CI build tooling when a CI workflow is added. Continue with runtime minimization in Task 3, media capabilities in Task 4, and automated checks in Task 5.
+
 ## 2026-10-25: Begin Dependency Locking
 
 Request:

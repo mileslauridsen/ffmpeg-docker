@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "base_image": {
+    "reference": "debian:trixie-slim",
+    "release": "Debian GNU/Linux 13 (Trixie)",
+    "index_digest": "sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad",
+    "platform_manifests": {
+      "linux/amd64": "sha256:4876fdea29cac1a33a3195f1eb1952feb1fca7dd6dd00be3e2f1879cf20d34d2",
+      "linux/arm64": "sha256:a66b19aa552f595b4ab276c6b4f9b24fa4546632c5ecd88cccdced4a6866323a"
+    }
+  },
+  "apt": {
+    "snapshot_id": "20261025T000000Z",
+    "suites": ["trixie", "trixie-security"],
+    "components": ["main"],
+    "sources_file": "build/apt/sources.list",
+    "requested_and_transitive_packages": {
+      "linux/amd64": "build/apt/builder-amd64.packages",
+      "linux/arm64": "build/apt/builder-arm64.packages"
+    },
+    "resolved_package_manifests": {
+      "linux/amd64": "build/apt/resolved-amd64.packages",
+      "linux/arm64": "build/apt/resolved-arm64.packages"
+    },
+    "runtime_bash_version": "5.2.37-2+b10"
+  },
+  "compiler_and_build_tools": {
+    "gcc": "14.2.0-19",
+    "g++": "14.2.0-19",
+    "binutils_and_linker": "2.44-3",
+    "cmake": "3.31.6-2",
+    "make": "4.4.1-2",
+    "autoconf": "2.72-3.1",
+    "automake": "1:1.17-4",
+    "libtool": "2.5.4-4",
+    "pkg-config": "1.8.1-4",
+    "python3": "3.13.5-1",
+    "libc6": "2.41-12+deb13u4",
+    "nasm": "3.02 (source archive pinned in dependencies.lock.json)"
+  },
+  "cpu_baselines": {
+    "linux/amd64": "-march=x86-64 -mtune=generic (x86-64-v1)",
+    "linux/arm64": "-march=armv8-a -mtune=generic",
+    "ffmpeg_runtime_cpu_detection": true,
+    "host_native_tuning": false
+  },
+  "docker_build_tools": {
+    "dockerfile_frontend": {
+      "reference": "docker/dockerfile:1.7.1",
+      "index_digest": "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
+    },
+    "buildkit": {
+      "reference": "moby/buildkit:v0.33.1",
+      "index_digest": "sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea"
+    },
+    "buildx_cli": "0.37.2",
+    "local_docker_engine_observed": "29.8.2",
+    "ci": "No CI workflow is currently configured. Use the pinned BuildKit container and the documented Buildx CLI version when CI is added."
+  }
+}

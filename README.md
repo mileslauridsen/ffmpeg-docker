@@ -17,6 +17,7 @@ https://trac.ffmpeg.org/wiki/CompilationGuide/Centos
 - [Git workflow](docs/GIT.md): branches, worktree safety, and signed commits.
 - [Implementation log](docs/IMPLEMENTATION.md): decisions and validation history.
 - [Source provenance](docs/SOURCE_PROVENANCE.md): locked archive identities and checksum evidence.
+- [Build environment](docs/BUILD_ENVIRONMENT.md): fixed OS packages, toolchain, CPU baselines, and Docker build tools.
 - [Agent guidance](AGENTS.md): project orientation and working loop.
 
 The project playbook is set up. [Build verification](docs/plans/02-build-verification.md)

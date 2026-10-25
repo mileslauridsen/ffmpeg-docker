@@ -1,0 +1,3 @@
+# Debian archive state fixed at the snapshot timestamp; Release signatures remain checked by APT.
+deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20261025T000000Z/ trixie main
+deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/20261025T000000Z/ trixie-security main
