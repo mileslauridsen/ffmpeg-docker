@@ -7,7 +7,8 @@ ENV PATH="/root/bin:${PATH}"
 # Install dependencies
 # Make source directory
 RUN	yum -y update && yum clean all && \
-	yum -y install autoconf automake bzip2 cmake freetype-devel gcc gcc-c++ git libtool make mercurial pkgconfig zlib-devel hg && \
+	yum -y install autoconf automake bzip2 cmake freetype-devel gcc gcc-c++ \
+	git libtool make mercurial pkgconfig zlib-devel hg && \
 	mkdir ~/ffmpeg_sources
 
 # Install NASM
