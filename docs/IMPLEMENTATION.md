@@ -2,6 +2,32 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-25: Plan Image Modernization
+
+Request:
+
+- Turn the five repository-review recommendations into a planning file with ordered steps for an implementing agent.
+
+Decision:
+
+- Add [phase 3](plans/03-small-deterministic-image.md) with tasks for source locking, build-environment locking, runtime minimization, explicit media capabilities, and automated size/reproducibility checks.
+- Specify prerequisites, task dependencies, deliverables, completion evidence, and acceptance criteria. Keep exact versions and numeric size budgets pending measurement.
+- Preserve the existing compatibility contracts while requiring an explicit decision before choosing a shell-free runtime or removing media support.
+- Keep phase 2 as the baseline investigation; document a handoff if legacy build failures make modernization necessary without calling that investigation complete.
+
+Affected areas:
+
+- New phase plan, roadmap index and status, and this log. Runtime code remains unchanged.
+
+Validation:
+
+- Checked local Markdown links, unresolved template prompts, whitespace, and plan/roadmap status consistency.
+- No Docker build or modernization task was executed for this planning-only change.
+
+Follow-up:
+
+- Execute baseline verification and the ordered modernization tasks, recording actual measurements and updating task status as work completes.
+
 ## 2026-10-25: Synchronize GitHub Branch Rename
 
 Request:
