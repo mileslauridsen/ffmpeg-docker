@@ -1,0 +1,111 @@
+{
+  "lock_version": 1,
+  "dependencies": [
+    {
+      "name": "ffmpeg",
+      "version": "8.1.3",
+      "url": "https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz",
+      "archive": "ffmpeg-8.1.3.tar.xz",
+      "sha256": "7138d28c96d9d3e3af4ee3d8cad72741f8ffb40da90c1112235dea3ecd3178a3",
+      "source_root": "ffmpeg-8.1.3",
+      "signatures": [
+        {
+          "url": "https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz.asc",
+          "file": "ffmpeg-8.1.3.tar.xz.asc",
+          "key_file": "ffmpeg-release-key.asc",
+          "fingerprint": "FCF986EA15E6E293A5644F10B4322F04D67658D8"
+        }
+      ],
+      "checksum_provenance": "Locally computed SHA-256; detached release signature verified with the pinned FFmpeg release key fingerprint."
+    },
+    {
+      "name": "nasm",
+      "version": "3.02",
+      "url": "https://www.nasm.us/pub/nasm/releasebuilds/3.02/nasm-3.02.tar.xz",
+      "archive": "nasm-3.02.tar.xz",
+      "sha256": "87336eba53b4acfe917424ab5d500d2b0054d9f5148d35c2273ccf2cfb712f0d",
+      "source_root": "nasm-3.02",
+      "checksum_provenance": "Locally computed SHA-256 from the upstream HTTPS release URL."
+    },
+    {
+      "name": "x264",
+      "version": "31e19f92f00c7003fa115047ce50978bc98c3a0d",
+      "url": "https://codeload.github.com/mirror/x264/tar.gz/31e19f92f00c7003fa115047ce50978bc98c3a0d",
+      "archive": "x264-31e19f92f00c7003fa115047ce50978bc98c3a0d.tar.gz",
+      "sha256": "d053c9d86988d6bc78237ca5205865c5ddf99c98ef4cd9927eec8f6d388f6dd9",
+      "source_root": "x264-31e19f92f00c7003fa115047ce50978bc98c3a0d",
+      "checksum_provenance": "Locally computed SHA-256 for the immutable commit archive; commit resolved from the x264 stable branch mirror."
+    },
+    {
+      "name": "x265",
+      "version": "4.1",
+      "url": "https://get.videolan.org/x265/x265_4.1.tar.gz",
+      "archive": "x265_4.1.tar.gz",
+      "sha256": "a31699c6a89806b74b0151e5e6a7df65de4b49050482fe5ebf8a4379d7af8f29",
+      "source_root": "x265_4.1",
+      "checksum_provenance": "Matches the SHA-256 published on the VideoLAN x265 download page."
+    },
+    {
+      "name": "fdk-aac",
+      "version": "2.0.3",
+      "url": "https://github.com/mstorsjo/fdk-aac/archive/refs/tags/v2.0.3.tar.gz",
+      "archive": "fdk-aac-2.0.3.tar.gz",
+      "sha256": "e25671cd96b10bad896aa42ab91a695a9e573395262baed4e4a2ff178d6a3a78",
+      "source_root": "fdk-aac-2.0.3",
+      "checksum_provenance": "Locally computed SHA-256 from the pinned upstream release tag archive over HTTPS."
+    },
+    {
+      "name": "lame",
+      "version": "3.100",
+      "url": "https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz",
+      "archive": "lame-3.100.tar.gz",
+      "sha256": "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e",
+      "source_root": "lame-3.100",
+      "checksum_provenance": "Locally computed SHA-256 from the upstream HTTPS release URL."
+    },
+    {
+      "name": "opus",
+      "version": "1.6.1",
+      "url": "https://downloads.xiph.org/releases/opus/opus-1.6.1.tar.gz",
+      "archive": "opus-1.6.1.tar.gz",
+      "sha256": "6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1",
+      "source_root": "opus-1.6.1",
+      "checksum_provenance": "Matches the SHA-256 published on the Opus 1.6.1 release page."
+    },
+    {
+      "name": "libogg",
+      "version": "1.3.6",
+      "url": "https://downloads.xiph.org/releases/ogg/libogg-1.3.6.tar.xz",
+      "archive": "libogg-1.3.6.tar.xz",
+      "sha256": "5c8253428e181840cd20d41f3ca16557a9cc04bad4a3d04cce84808677fa1061",
+      "source_root": "libogg-1.3.6",
+      "checksum_provenance": "Matches libogg 1.3.6 in the upstream Xiph SHA256SUMS file."
+    },
+    {
+      "name": "libvorbis",
+      "version": "1.3.7",
+      "url": "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz",
+      "archive": "libvorbis-1.3.7.tar.xz",
+      "sha256": "b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b",
+      "source_root": "libvorbis-1.3.7",
+      "signatures": [
+        {
+          "url": "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz.asc",
+          "file": "libvorbis-1.3.7.tar.xz.asc",
+          "key_file": "xiph-rillian-release-key.asc",
+          "fingerprint": "B7B00AEE1F960EEA0FED66FB9259A8F2D2D44C84"
+        }
+      ],
+      "checksum_provenance": "Matches libvorbis 1.3.7 in the upstream Xiph SHA256SUMS file."
+    },
+    {
+      "name": "libvpx",
+      "version": "1.17.0",
+      "url": "https://github.com/webmproject/libvpx/archive/refs/tags/v1.17.0.tar.gz",
+      "archive": "libvpx-1.17.0.tar.gz",
+      "sha256": "1020f184046187baa2985dbde38e0691f49c44088bca7a1842b0236c6081dc0a",
+      "source_root": "libvpx-1.17.0",
+      "checksum_provenance": "Locally computed SHA-256 from the pinned upstream release tag archive over HTTPS."
+    }
+  ]
+}

@@ -1,130 +1,81 @@
-#Download base image centos 7
-FROM centos:centos7 AS compile-image
+# Debian 13 (Trixie) multi-platform index pinned to sha256:62bd423a.
+FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS compile-image
 
 ENV PATH="/root/bin:${PATH}"
+COPY build /build
 
-# Update software repository
-# Install dependencies
-# Make source directory
-RUN	yum -y update && yum clean all && \
-	yum -y install autoconf automake bzip2 cmake freetype-devel gcc gcc-c++ \
-	git libtool make mercurial pkgconfig zlib-devel hg && \
-	mkdir ~/ffmpeg_sources
+# Install the compiler and tools required by the locked source builds.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends autoconf automake bzip2 ca-certificates \
+        cmake g++ gcc gpgv gnupg2 libfreetype6-dev libtool make pkg-config \
+        python3 xz-utils zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p ~/ffmpeg_sources/downloads
+
+# Fetch only locked source archives; the helper verifies each digest and the FFmpeg signature before extraction.
+RUN python3 -u /build/fetch_sources.py --all \
+    --output-dir ~/ffmpeg_sources/downloads \
+    --extract-dir ~/ffmpeg_sources
 
 # Install NASM
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L http://www.nasm.us/pub/nasm/releasebuilds/2.13.02/nasm-2.13.02.tar.bz2 && \
-	tar xjvf nasm-2.13.02.tar.bz2 && \
-	cd nasm-2.13.02 && \
-	./autogen.sh && \
+RUN cd ~/ffmpeg_sources/nasm && \
 	./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
 	make && \
 	make install && \
-	cd ../ && \
-	rm -r nasm* && \
-	yum erase nasm && hash -r
-
-# Install Yasm
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L http://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz && \
-	tar xzvf yasm-1.3.0.tar.gz && \
-	cd yasm-1.3.0 && \
-	./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
-	make && \
-	make install && \
-	cd ../ && \
-	rm -r yasm*
+	hash -r
 
 # Install libx264
-RUN cd ~/ffmpeg_sources && \
-	yum -y remove nasm && hash -r && \
-	git clone --depth 1 http://git.videolan.org/git/x264 && \
-	cd x264 && \
+RUN cd ~/ffmpeg_sources/x264 && \
 	./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-static && \
 	make && \
 	make install && \
-	cd ../ && \
-	rm -r x264*
+	hash -r
 
 # Install libx265
-RUN cd ~/ffmpeg_sources && \
-	hg clone https://bitbucket.org/multicoreware/x265 && \
-	cd ~/ffmpeg_sources/x265/build/linux && \
+RUN cd ~/ffmpeg_sources/x265/build/linux && \
 	cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_SHARED:bool=off ../../source && \
 	make && \
-	make install && \
-	cd ~/ffmpeg_sources && \
-	rm -r x265*
+	make install
 
 # Install libfdk_aac
-RUN cd ~/ffmpeg_sources && \
-	git clone --depth 1 https://github.com/mstorsjo/fdk-aac && \
-	cd fdk-aac && \
+RUN cd ~/ffmpeg_sources/fdk-aac && \
 	autoreconf -fiv && \
 	./configure --prefix="$HOME/ffmpeg_build" --disable-shared && \
 	make && \
-	make install && \
-	rm -r fdk-aac*
+	make install
 
 # Install libmp3lame
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L http://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz && \
-	tar xzvf lame-3.100.tar.gz && \
-	cd lame-3.100 && \
+RUN cd ~/ffmpeg_sources/lame && \
 	./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --disable-shared --enable-nasm && \
 	make && \
-	make install && \
-	cd ../ && \
-	rm -r lame*
+	make install
 
 # Install libopus
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L https://archive.mozilla.org/pub/opus/opus-1.2.1.tar.gz && \
-	tar xzvf opus-1.2.1.tar.gz && \
-	cd opus-1.2.1 && \
+RUN cd ~/ffmpeg_sources/opus && \
 	./configure --prefix="$HOME/ffmpeg_build" --disable-shared && \
 	make && \
-	make install && \
-	cd ../ && \
-	rm -r opus*
+	make install
 
 # libogg
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L http://downloads.xiph.org/releases/ogg/libogg-1.3.3.tar.gz && \
-	tar xzvf libogg-1.3.3.tar.gz && \
-	cd libogg-1.3.3 && \
+RUN cd ~/ffmpeg_sources/libogg && \
 	./configure --prefix="$HOME/ffmpeg_build" --disable-shared && \
 	make && \
-	make install && \
-	cd ../ && \
-	rm -r libogg*
+	make install
 
 # Install libvorbis
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.5.tar.gz && \
-	tar xzvf libvorbis-1.3.5.tar.gz && \
-	cd libvorbis-1.3.5 && \
+RUN cd ~/ffmpeg_sources/libvorbis && \
 	./configure --prefix="$HOME/ffmpeg_build" --with-ogg="$HOME/ffmpeg_build" --disable-shared && \
 	make && \
-	make install && \
-	cd ../ && \
-	rm -r libvorbis*
+	make install
 
 # Install libvpx
-RUN cd ~/ffmpeg_sources && \
-	git clone --depth 1 https://chromium.googlesource.com/webm/libvpx.git && \
-	cd libvpx && \
-	./configure --prefix="$HOME/ffmpeg_build" --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm && \
+RUN cd ~/ffmpeg_sources/libvpx && \
+	./configure --prefix="$HOME/ffmpeg_build" --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=nasm && \
 	make && \
-	make install && \
-	cd ../ && \
-	rm -r libvpx*
+	make install
 
 # Install ffmpeg
-RUN cd ~/ffmpeg_sources && \
-	curl -O -L https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
-	tar xjvf ffmpeg-snapshot.tar.bz2 && \
-	cd ffmpeg && \
+RUN cd ~/ffmpeg_sources/ffmpeg && \
 	PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
   --prefix="$HOME/ffmpeg_build" \
   --pkg-config-flags="--static" \
@@ -144,18 +95,17 @@ RUN cd ~/ffmpeg_sources && \
   --enable-nonfree && \
 	make && \
 	make install && \
-	cd ../ && \
-	rm -r ffmpeg* && \
 	hash -r
 
 # Remove source directory and clean yum
-RUN	rm -r ~/ffmpeg_sources && \
-    rm -r ~/ffmpeg_build && \
-	yum -y remove cmake gcc gcc-c++ git make mercurial hg && \
-	yum -y clean all && \
-	rm -rf /var/cache/yum
+RUN rm -r ~/ffmpeg_sources ~/ffmpeg_build
 
-FROM centos:centos7 AS runtime-image
+FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS runtime-image
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends bash && \
+    rm -rf /var/lib/apt/lists/* && \
+    printf '%s\n' 'export PATH="/root/bin:$PATH"' > /etc/profile.d/ffmpeg-path.sh
 
 COPY --from=compile-image /root/bin /root/bin
 ENV PATH=/root/bin:$PATH

@@ -6,12 +6,11 @@ Produce the smallest measured FFmpeg runtime image that meets the documented VFX
 
 ## Current State
 
-- The Dockerfile already separates compilation and runtime stages, but both use an unpinned CentOS 7 image.
-- FFmpeg comes from a moving snapshot; x264, x265, FDK AAC, and libvpx use unpinned repository checkouts.
-- Other source archives have versioned names but no checksum verification.
-- `yum update` and unversioned packages leave the compiler and build environment variable.
+- The Dockerfile separates compilation and runtime stages and now uses a digest-pinned Debian 13 Trixie base for amd64 and arm64 targets.
+- FFmpeg and its nine source dependencies now have immutable identities, archive checksums, and signature checks where available.
+- The Debian package repositories and package versions are not yet snapshot-pinned; that remains Task 2 work.
 - The runtime copies all of `/root/bin`, including installed assembler tools, rather than an explicit runtime artifact set.
-- Required codecs and media profiles, actual runtime linkage, and image sizes have not been measured.
+- Configured encoders and one H.264 workflow have been verified. Broader required media profiles, runtime linkage, and image sizes remain unmeasured.
 - No automated size, dependency-lock, or reproducibility checks exist.
 
 ## Decisions And Boundaries
@@ -39,17 +38,19 @@ For each task, record commands, target platform, results, and unresolved issues 
 
 ### Task 1: Lock FFmpeg And Every Source Dependency
 
-Deliverable: `build/dependencies.lock.json` and a build helper that consumes it as the single source of dependency identities.
+Deliverable: `build/dependencies.lock.json` and a build helper that consumes it as the single source of archive identities. NASM is retained; Yasm is removed as a redundant assembler input for this recipe.
 
-- [ ] 1. Inventory FFmpeg, x264, x265, FDK AAC, LAME, Opus, Ogg, Vorbis, libvpx, NASM, and Yasm, including dependencies introduced by the replacement build.
-- [ ] 2. Select compatible exact releases or full commit hashes. Record selection rationale and media compatibility; never resolve branch heads or moving snapshots during an ordinary build.
-- [ ] 3. Record each dependency's version or commit, source URL, archive SHA-256, and relevant patches. Store patches in the repository so their contents are reviewable.
-- [ ] 4. Establish checksum provenance. Verify upstream release signatures where available using an identified signing-key fingerprint; document how sources without signatures were checked.
-- [ ] 5. Implement download and extraction from the manifest, preferring HTTPS and failing on HTTP errors or checksum mismatches. Ensure no source is extracted or compiled before verification succeeds.
-- [ ] 6. Remove duplicate version definitions and all floating source retrieval from the Dockerfile. Pin source submodules too, if any selected dependency requires them.
-- [ ] 7. Exercise a successful fetch and a deliberately incorrect checksum. Document the controlled process for changing a dependency lock and rerunning its compatibility checks.
+See [locked source provenance](../SOURCE_PROVENANCE.md) for the current pin rationale and verification evidence.
 
-Completion evidence: every built source maps to a manifest entry; a fresh fetch resolves the same identities; a checksum mismatch stops the build before extraction.
+- [x] 1. Inventory FFmpeg, x264, x265, FDK AAC, LAME, Opus, Ogg, Vorbis, libvpx, NASM, and Yasm, including dependencies introduced by the replacement build. Yasm was only selected to assemble libvpx and is removed in favor of NASM; libvpx's NASM assembler path was exercised successfully in both architecture builds.
+- [x] 2. Confirm the selected exact releases or full commit hashes are compatible with the replacement build environment and required media profiles. Record selection rationale and media compatibility; never resolve branch heads or moving snapshots during an ordinary build. All locked sources compiled for `linux/amd64` and `linux/arm64` with Debian 13 Trixie and GCC 14.2.0; FFmpeg configured all currently enabled external codec integrations, the expected encoders are present, and a one-second H.264 encode/probe passed on each architecture. Broader VFX media profiles remain for Task 4 because the project has not defined them yet.
+- [x] 3. Record each selected dependency's version or commit, source URL, archive SHA-256, and relevant patches. Store patches in the repository so their contents are reviewable.
+- [x] 4. Establish checksum provenance. Verify upstream release signatures where available using an identified signing-key fingerprint; document how sources without signatures were checked. FFmpeg and libvorbis detached signatures were verified; publisher checksums and locally computed hashes are distinguished in the provenance record.
+- [x] 5. Implement download and extraction from the manifest, preferring HTTPS and failing on HTTP errors or checksum mismatches. Ensure no source is extracted or compiled before verification succeeds.
+- [x] 6. Remove duplicate version definitions and all floating source retrieval from the Dockerfile. Pin source submodules too, if any selected dependency requires them.
+- [x] 7. Exercise a successful fetch and a deliberately incorrect checksum. Document the controlled process for changing a dependency lock and rerunning its compatibility checks.
+
+Completion evidence: every built source maps to a manifest entry; amd64 and arm64 image builds fetched and verified all locked identities; a checksum mismatch stops before extraction; every configured external encoder is present; the H.264 runtime smoke test passed on both architectures.
 
 ### Task 2: Pin The Build Environment
 
@@ -134,8 +135,8 @@ Completion evidence: CI catches an invalid checksum, a missing required capabili
 
 ## Status
 
-Status: planned
+Status: in progress
 
-All task checkboxes are pending. No modernization implementation or image-size measurement has been performed.
+Task 1 is complete for `linux/amd64` and `linux/arm64`: locked sources compiled, configured encoders were present, and a mounted H.264 encode/probe passed on both. Broader VFX media profiles remain undefined and are assigned to Task 4. Task 2 still needs immutable package-repository and toolchain resolution. The CentOS 7 baseline failed at package setup on both ARM64 and amd64; phase 2 remains in progress. See the implementation log.
 
 Last updated: 2026-10-25

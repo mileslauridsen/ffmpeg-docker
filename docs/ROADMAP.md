@@ -10,9 +10,9 @@ This is the high-level direction for ffmpeg-docker. Detailed execution belongs i
 
 ## Current Direction
 
-- The project playbook is adopted. The next planned engineering phase is build verification; it has not started.
+- The project playbook is adopted. Build verification has started; CentOS 7 failed on both ARM64 and amd64. The replacement Debian 13 image builds and passes a mounted H.264 smoke test on both `linux/amd64` and `linux/arm64`.
 - Establish a measured baseline before selecting a replacement base image, updating codec versions, or changing supported platforms.
-- Use phase 2 evidence to execute the five modernization tasks in phase 3. Both engineering phases remain planned; the modernization plan defines a documented handoff if the legacy build cannot be restored reasonably.
+- Use phase 2 evidence to execute the five modernization tasks in phase 3. Phase 2 remains incomplete; phase 3 is in progress with locked sources. The modernization plan defines a handoff when the legacy build cannot proceed reasonably.
 - Retain the two-stage build model and direct FFmpeg CLI workflow.
 - Track further work in the phase plans rather than maintaining a duplicate backlog.
 
@@ -28,12 +28,12 @@ build: define compatibility -> inspect dependencies -> build -> inspect tools ->
 | Phase | Status | Plan | Outcome |
 | --- | --- | --- | --- |
 | 1. Project playbook | complete | [Plan](plans/01-project-playbook.md) | Project guidance, workflow, mission, roadmap, plans, and log adopted. |
-| 2. Build verification | planned | [Plan](plans/02-build-verification.md) | Build and runtime baseline with documented failures or successful validation. |
-| 3. Small image and deterministic dependencies | planned | [Plan](plans/03-small-deterministic-image.md) | Locked inputs, a measured minimal runtime, and automated capability, size, and reproducibility checks. |
+| 2. Build verification | in progress | [Plan](plans/02-build-verification.md) | CentOS 7 package-repository failures recorded for both architectures; amd64 and arm64 replacement builds and smoke checks pass; broader capability matrix remains. |
+| 3. Small image and deterministic dependencies | in progress | [Plan](plans/03-small-deterministic-image.md) | Task 1 is complete for amd64 and arm64; build-environment locking and remaining tasks are pending. |
 
 ## Assumptions
 
 - Initial use remains a locally built Docker image; no registry publication or release automation is configured in this setup.
-- The intended deployment platform and required media profiles still need to be established during build verification.
-- The current recipe mixes versioned archives, unpinned repositories, and an FFmpeg snapshot; it does not define reproducible inputs.
-- A Docker CLI is installed on the setup host. Daemon availability, image build success, and runtime behavior have not been checked.
+- The selected image targets are `linux/amd64` and `linux/arm64`. Required media profiles still need to be established in phase 3, Task 4.
+- The original recipe mixed versioned archives, unpinned repositories, and an FFmpeg snapshot; the replacement source inputs are locked, while OS package resolution remains unpinned.
+- Docker Desktop's ARM64 Linux daemon is available. Both images build and pass the recorded CLI and H.264 smoke checks on that engine; native production workers for each architecture have not been used for validation.

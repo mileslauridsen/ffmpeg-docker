@@ -6,11 +6,11 @@ Establish and document a working build and runtime baseline for the FFmpeg image
 
 ## Current State
 
-- Both Docker stages use `centos:centos7`.
-- Codec libraries are built from a mixture of pinned archives and unpinned source repositories; FFmpeg comes from a snapshot archive.
+- The initial Dockerfile used `centos:centos7`; its package repositories failed for ARM64 and amd64. The replacement build and runtime stages now use Debian 13 Trixie pinned by digest.
+- Codec libraries and FFmpeg now use the pinned source manifest described in [phase 3](03-small-deterministic-image.md).
 - The runtime stage copies `/root/bin` without explicitly installing runtime libraries. Shared-library requirements are unverified.
 - No automated build or media smoke checks are present.
-- This setup has inspected the recipe only; it has not tested network sources, Docker daemon access, compilation, or media output.
+- The Docker daemon and ARM64 Linux engine were reached on 2026-10-25. CentOS 7 builds failed at `yum update` for both ARM64 and amd64 because the configured mirrorlist/base URL was unavailable. The replacement Debian 13 builds completed for both architectures; see the [implementation log](../IMPLEMENTATION.md). Mounted H.264 encode/probe and login Bash checks passed on both.
 
 ## Decisions And Boundaries
 
@@ -75,6 +75,8 @@ Inspect the probe output for H.264 video, 128x128 dimensions, 24 fps, and approx
 
 ## Status
 
-Status: planned
+Status: in progress
+
+The targets are `linux/amd64` and `linux/arm64`; replacement builds, CLI startup, configured encoder inventory, mounted H.264 smoke tests, and login Bash checks passed on both. The broader required media matrix remains undefined and is assigned to phase 3, Task 4.
 
 Last updated: 2026-10-25
