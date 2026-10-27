@@ -10,7 +10,7 @@ Produce the smallest measured FFmpeg runtime image that meets the documented VFX
 - FFmpeg and its nine source dependencies now have immutable identities, archive checksums, and signature checks where available.
 - Debian package resolution and the builder toolchain are snapshot-pinned for amd64 and arm64; see [build environment](../BUILD_ENVIRONMENT.md).
 - The runtime now copies only `ffmpeg` and `ffprobe` from an explicit artifact directory, plus source license notices. NASM, codec CLI tools, headers, archives, sources, and build caches stay out of the final image.
-- Shared and fully static candidates have been measured for amd64 and arm64. The shared candidate is selected for this initial capability set; Task 4 must define broader media requirements and repeat the comparison.
+- Shared and fully static candidates were measured again with the Task 4 media set. Shared linking remains smaller by compressed OCI archive size on both architectures. The default build enables FFmpeg's size optimization; SIMD and threading remain enabled.
 - No automated size, dependency-lock, or reproducibility checks exist.
 
 ## Decisions And Boundaries
@@ -43,7 +43,7 @@ Deliverable: `build/dependencies.lock.json` and a build helper that consumes it 
 See [locked source provenance](../SOURCE_PROVENANCE.md) for the current pin rationale and verification evidence.
 
 - [x] 1. Inventory FFmpeg, x264, x265, FDK AAC, LAME, Opus, Ogg, Vorbis, libvpx, NASM, and Yasm, including dependencies introduced by the replacement build. Yasm was only selected to assemble libvpx and is removed in favor of NASM; libvpx's NASM assembler path was exercised successfully in both architecture builds.
-- [x] 2. Confirm the selected exact releases or full commit hashes are compatible with the replacement build environment and required media profiles. Record selection rationale and media compatibility; never resolve branch heads or moving snapshots during an ordinary build. All locked sources compiled for `linux/amd64` and `linux/arm64` with Debian 13 Trixie and GCC 14.2.0; FFmpeg configured all currently enabled external codec integrations, the expected encoders are present, and a one-second H.264 encode/probe passed on each architecture. Broader VFX media profiles remain for Task 4 because the project has not defined them yet.
+- [x] 2. Confirm the selected exact releases or full commit hashes are compatible with the replacement build environment and required media profiles. Record selection rationale and media compatibility; never resolve branch heads or moving snapshots during an ordinary build. All locked sources compiled for `linux/amd64` and `linux/arm64` with Debian 13 Trixie and GCC 14.2.0; FFmpeg configured all currently enabled external codec integrations, the expected encoders are present, and a one-second H.264 encode/probe passed on each architecture. Broader VFX media profiles were defined and tested in Task 4.
 - [x] 3. Record each selected dependency's version or commit, source URL, archive SHA-256, and relevant patches. Store patches in the repository so their contents are reviewable.
 - [x] 4. Establish checksum provenance. Verify upstream release signatures where available using an identified signing-key fingerprint; document how sources without signatures were checked. FFmpeg and libvorbis detached signatures were verified; publisher checksums and locally computed hashes are distinguished in the provenance record.
 - [x] 5. Implement download and extraction from the manifest, preferring HTTPS and failing on HTTP errors or checksum mismatches. Ensure no source is extracted or compiled before verification succeeds.
@@ -71,26 +71,26 @@ Completion evidence: two clean builds each of `linux/amd64` and `linux/arm64` us
 Deliverable: a measured runtime choice and an explicit artifact-copy policy.
 
 - [x] 1. Measure the working baseline and both runtime candidates: total image bytes, gzip-compressed `docker image save` size, executable sizes, and layer contents. Record platform and image identity with every result in the implementation log.
-- [x] 2. Inspect runtime linkage using `ldd` on each architecture and verify static candidates report no dynamic executable. The shared runtime uses Debian's loader and resolved shared libraries; broader certificates, fonts, and data requirements remain subject to Task 4's capability matrix.
+- [x] 2. Inspect runtime linkage using `ldd` on each architecture and verify static candidates report no dynamic executable. The shared runtime uses Debian's loader and resolved shared libraries; runtime data requirements were reviewed against the Task 4 capability matrix.
 - [x] 3. Create an explicit output directory containing only `ffmpeg`, `ffprobe`, and collected source license notices. Exclude NASM, codec CLI tools, headers, static archives, sources, and build caches.
 - [x] 4. Build and compare shared and fully static runtime candidates for both architectures. The static x265 link needed removal of an unavailable `-lgcc_s` pkg-config token; the resulting builds and runtime checks passed.
 - [x] 5. Strip shipping binaries and retain diagnostic copies in the compile stage outside the runtime image. Compare total image sizes for shared and static links; the small static executable reduction does not offset its larger compressed image transfer.
-- [x] 6. Test mounted-media reads and writes, both command-line tools, H.264 output properties, absence of build tools, and Bash access on amd64 and arm64. Broader runtime data tests await Task 4's capability matrix.
-- [x] 7. Select the shared candidate for the initial capability set based on the smaller compressed transfer size on both platforms, record the comparison and static alternative, and copy only verified runtime artifacts into the final stage. Repeat after Task 4.
+- [x] 6. Test mounted-media reads and writes, both command-line tools, H.264 output properties, absence of build tools, and Bash access on amd64 and arm64. The final media matrix and mounted-file/pipe behavior were checked in Task 4.
+- [x] 7. Repeat the shared/static comparison for the final capability set, record the measurements and selected linking strategy, and copy only verified runtime artifacts into the final stage. The shared build has the smaller compressed OCI archive on both architectures; measurements are in the implementation log.
 
-Completion evidence: initial before/after and shared/static measurements, runtime-content inventory, passing smoke checks, and no compiler or assembler tools in the production image are recorded in the implementation log. Final selection is provisional until Task 4 defines and validates the capability matrix; repeat the comparison then.
+Completion evidence: initial and final shared/static measurements, runtime-content inventory, passing media checks, and no compiler or assembler tools in the production image are recorded in the implementation log.
 
 ### Task 4: Define And Minimize Media Capabilities
 
 Deliverable: `docs/MEDIA_SUPPORT.md`, explicit FFmpeg configuration, and representative media tests.
 
-- [ ] 1. Define a capability matrix covering required input/output formats, codecs, filters, protocols, bit depths, alpha handling, image sequences, and supported platforms. Record representative user workflows and expected outputs.
-- [ ] 2. Map every requirement to FFmpeg components and external libraries. Classify the currently enabled codecs as required or optional; record any intentional support removal before implementing it.
-- [ ] 3. Set `--disable-autodetect` and explicitly enable required external integrations. Disable unused programs and documentation while retaining `ffmpeg` and `ffprobe`.
-- [ ] 4. Evaluate `--disable-everything` with explicit component enables. Include required demuxers, muxers, parsers, bitstream filters, protocols, filters, and test-only generators where needed; verify behavior rather than relying solely on encoder listings.
-- [ ] 5. Remove unnecessary external dependencies from the build and lock manifest only after their capabilities are deliberately excluded. Recheck the resulting configuration and required license notices.
-- [ ] 6. Compare `--enable-small` against the ordinary optimized build on representative workloads. Record encoding time, output correctness, and image-size differences; retain SIMD and threading unless evidence supports changing them.
-- [ ] 7. Run the complete capability matrix and publish the resulting support contract. Repeat runtime-size measurements with the final capability set and update README usage.
+- [x] 1. Define the capability matrix covering common VFX input/output formats, codecs, filters, protocols, bit depths, alpha handling, image sequences, and both target platforms. The user selected preservation of current codecs plus common VFX formats; representative workflows and expected outputs are in [media support](../MEDIA_SUPPORT.md).
+- [x] 2. Map the candidate workflows to FFmpeg components and external libraries in the support matrix. Keep all currently configured external codec integrations; broader default FFmpeg components are candidates for removal only where not required by the matrix.
+- [x] 3. Add `--disable-autodetect`, explicitly enable the locked codec integrations, and disable unused programs, docs, network access, and capture devices while retaining `ffmpeg` and `ffprobe`.
+- [x] 4. Evaluate `--disable-everything` with explicit component enables. Include required demuxers, muxers, parsers, bitstream filters, protocols, and filters; generate redistributable fixtures outside the runtime image because generator/capture devices are excluded. Verify behavior rather than relying solely on encoder listings.
+- [x] 5. Audit external dependencies against the selected matrix and remove dependencies only when their capabilities are deliberately excluded. All currently locked external codec libraries remain required by the selected scope; the configured license notices were retained and reviewed.
+- [x] 6. Compare `--enable-small` against the ordinary optimized build on representative workloads. On amd64, the 1080p 10-second H.264 medium-preset encode had a 1.484-second ordinary median and a 1.435-second size-optimized median; both produced 1920×1080, 24 fps, 10-second H.264 output. The size-optimized image was 15,107,264 bytes smaller by `docker image inspect` on amd64 and 12,178,196 bytes smaller on arm64. ARM64 encode output correctness passed; only amd64 performance was timed. Retain SIMD and threading.
+- [x] 7. Run the representative capability matrix on both targets, publish the resulting support contract, and update README usage. Representative workflow checks passed on both targets and the support contract and operator instructions are published.
 
 Completion evidence: every required workflow passes, enabled capabilities match the documented matrix, and size savings and performance tradeoffs are measured. No required VFX feature is silently removed.
 
@@ -137,6 +137,6 @@ Completion evidence: CI catches an invalid checksum, a missing required capabili
 
 Status: in progress
 
-Tasks 1 and 2 are complete for `linux/amd64` and `linux/arm64`; Task 3's initial runtime comparison and selection are complete, pending repetition after Task 4. Task 2 uses provisional generic CPU baselines pending production-worker inventory; CI is not configured. Broader VFX media profiles remain undefined and are assigned to Task 4. The CentOS 7 baseline failed at package setup on both architectures; phase 2 remains in progress. See the implementation log.
+Tasks 1–4 are complete for `linux/amd64` and `linux/arm64`; Task 3's final runtime comparison selects shared linking, and `--enable-small` is enabled by default. Task 2 uses provisional generic CPU baselines pending production-worker inventory; CI is not configured. Task 5 automation remains. The CentOS 7 baseline failed at package setup on both architectures; phase 2 remains in progress. See the implementation log.
 
-Last updated: 2026-10-25
+Last updated: 2026-10-27

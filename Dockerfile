@@ -94,9 +94,14 @@ RUN cd ~/ffmpeg_sources/libvpx && \
 
 # Install ffmpeg
 ARG EXTRA_LDEXEFLAGS=""
-RUN if [ "$EXTRA_LDEXEFLAGS" = "-static" ]; then \
+ARG ENABLE_SMALL=1
+RUN set -eu; \
+    if [ "$EXTRA_LDEXEFLAGS" = "-static" ]; then \
         sed -i 's/-lgcc_s//g' "$HOME/ffmpeg_build/lib/pkgconfig/x265.pc"; \
     fi; \
+    if [ "$ENABLE_SMALL" = 1 ]; then SMALL_FLAG=--enable-small; \
+    elif [ "$ENABLE_SMALL" = 0 ]; then SMALL_FLAG=; \
+    else echo "ENABLE_SMALL must be 0 or 1" >&2; exit 2; fi; \
     cd ~/ffmpeg_sources/ffmpeg && \
 	PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
   --prefix="$HOME/ffmpeg_build" \
@@ -108,6 +113,132 @@ RUN if [ "$EXTRA_LDEXEFLAGS" = "-static" ]; then \
   --extra-libs=-lpthread \
   --extra-libs=-lm \
   --bindir="$HOME/bin" \
+  --disable-autodetect \
+  --disable-programs \
+  --enable-ffmpeg \
+  --enable-ffprobe \
+  --disable-doc \
+  --enable-zlib \
+  --disable-avdevice \
+  --disable-indevs \
+  --disable-outdevs \
+  --disable-network \
+  --disable-everything \
+  --enable-demuxer=aiff \
+  --enable-demuxer=avi \
+  --enable-demuxer=concat \
+  --enable-demuxer=flac \
+  --enable-demuxer=image2 \
+  --enable-demuxer=image2pipe \
+  --enable-demuxer=matroska \
+  --enable-demuxer=mov \
+  --enable-demuxer=mp3 \
+  --enable-demuxer=mxf \
+  --enable-demuxer=ogg \
+  --enable-demuxer=wav \
+  --enable-decoder=aac \
+  --enable-decoder=dnxhd \
+  --enable-decoder=dpx \
+  --enable-decoder=exr \
+  --enable-decoder=ffv1 \
+  --enable-decoder=flac \
+  --enable-decoder=h264 \
+  --enable-decoder=hevc \
+  --enable-decoder=libvpx_vp8 \
+  --enable-decoder=libvpx_vp9 \
+  --enable-decoder=mjpeg \
+  --enable-decoder=mp3 \
+  --enable-decoder=opus \
+  --enable-decoder=pcm_s16be \
+  --enable-decoder=pcm_s16le \
+  --enable-decoder=pcm_s24be \
+  --enable-decoder=pcm_s24le \
+  --enable-decoder=pcm_s32be \
+  --enable-decoder=pcm_s32le \
+  --enable-decoder=png \
+  --enable-decoder=prores \
+  --enable-decoder=tiff \
+  --enable-decoder=vorbis \
+  --enable-decoder=vp8 \
+  --enable-decoder=vp9 \
+  --enable-encoder=aac \
+  --enable-encoder=dnxhd \
+  --enable-encoder=dpx \
+  --enable-encoder=exr \
+  --enable-encoder=ffv1 \
+  --enable-encoder=flac \
+  --enable-encoder=libfdk_aac \
+  --enable-encoder=libmp3lame \
+  --enable-encoder=libopus \
+  --enable-encoder=libvorbis \
+  --enable-encoder=libx264 \
+  --enable-encoder=libx265 \
+  --enable-encoder=libvpx_vp8 \
+  --enable-encoder=libvpx_vp9 \
+  --enable-encoder=mjpeg \
+  --enable-encoder=pcm_s16le \
+  --enable-encoder=pcm_s16be \
+  --enable-encoder=pcm_s24le \
+  --enable-encoder=pcm_s24be \
+  --enable-encoder=pcm_s32le \
+  --enable-encoder=pcm_s32be \
+  --enable-encoder=png \
+  --enable-encoder=prores_ks \
+  --enable-encoder=tiff \
+  --enable-filter=alphaextract \
+  --enable-filter=alphamerge \
+  --enable-filter=anull \
+  --enable-filter=aformat \
+  --enable-filter=aresample \
+  --enable-filter=atrim \
+  --enable-filter=colorspace \
+  --enable-filter=concat \
+  --enable-filter=crop \
+  --enable-filter=fps \
+  --enable-filter=format \
+  --enable-filter=lut \
+  --enable-filter=lut3d \
+  --enable-filter=null \
+  --enable-filter=overlay \
+  --enable-filter=pad \
+  --enable-filter=scale \
+  --enable-filter=setpts \
+  --enable-filter=setparams \
+  --enable-filter=tonemap \
+  --enable-filter=trim \
+  --enable-filter=volume \
+  --enable-muxer=aiff \
+  --enable-muxer=flac \
+  --enable-muxer=image2 \
+  --enable-muxer=image2pipe \
+  --enable-muxer=matroska \
+  --enable-muxer=mov \
+  --enable-muxer=mp3 \
+  --enable-muxer=mp4 \
+  --enable-muxer=mxf \
+  --enable-muxer=ogg \
+  --enable-muxer=wav \
+  --enable-muxer=webm \
+  --enable-bsf=aac_adtstoasc \
+  --enable-bsf=h264_mp4toannexb \
+  --enable-bsf=hevc_mp4toannexb \
+  --enable-bsf=null \
+  --enable-bsf=vp9_superframe \
+  --enable-bsf=vp9_superframe_split \
+  --enable-parser=aac \
+  --enable-parser=dnxhd \
+  --enable-parser=h264 \
+  --enable-parser=hevc \
+  --enable-parser=mjpeg \
+  --enable-parser=mpeg4video \
+  --enable-parser=mpegvideo \
+  --enable-parser=opus \
+  --enable-parser=png \
+  --enable-parser=vp8 \
+  --enable-parser=vp9 \
+  --enable-protocol=file \
+  --enable-protocol=pipe \
+  $SMALL_FLAG \
   --enable-gpl \
   --enable-libfdk_aac \
   --enable-libmp3lame \

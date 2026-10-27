@@ -1,11 +1,23 @@
 # ffmpeg-docker
-Installation of FFmpeg for use in a VFX pipeline.
+FFmpeg command-line tools for VFX and media conversion workflows. The supported codec and format contract is documented in [Media Support](docs/MEDIA_SUPPORT.md).
 
-Compiled using these instructions:
-https://trac.ffmpeg.org/wiki/CompilationGuide/Centos
+## Build
 
-## Building with docker
-```docker build -t vfx/ffmpeg .```
+Create the pinned BuildKit builder described in [Build Environment](docs/BUILD_ENVIRONMENT.md), then build for one target:
+
+```sh
+docker buildx build --builder ffmpeg-pinned --platform=linux/amd64 --load -t vfx/ffmpeg .
+```
+
+Use `--platform=linux/arm64` for the ARM64 image.
+
+## Run
+
+Invoke the CLI directly and mount media into the container:
+
+```sh
+docker run --rm -v "$PWD/media:/media" vfx/ffmpeg ffmpeg -i /media/input.mov /media/output.mp4
+```
 
 ## Running image in an interactive bash shell
 ```docker run -it --entrypoint='bash' vfx/ffmpeg```
@@ -18,7 +30,7 @@ https://trac.ffmpeg.org/wiki/CompilationGuide/Centos
 - [Implementation log](docs/IMPLEMENTATION.md): decisions and validation history.
 - [Source provenance](docs/SOURCE_PROVENANCE.md): locked archive identities and checksum evidence.
 - [Build environment](docs/BUILD_ENVIRONMENT.md): fixed OS packages, toolchain, CPU baselines, and Docker build tools.
+- [Media support](docs/MEDIA_SUPPORT.md): tested formats, codecs, workflows, and explicit exclusions.
 - [Agent guidance](AGENTS.md): project orientation and working loop.
 
-The project playbook is set up. [Build verification](docs/plans/02-build-verification.md)
-is the next planned phase; this setup has not verified that the image builds or runs.
+The project roadmap and task state are in [docs/ROADMAP.md](docs/ROADMAP.md). Task 4's representative workflow evidence and known limits are recorded in [docs/MEDIA_SUPPORT.md](docs/MEDIA_SUPPORT.md) and [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).

@@ -2,6 +2,37 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-27: Complete Phase 3 Task 4 Media Capabilities
+
+Request:
+
+- Preserve the currently configured codecs and add common VFX format support; define a verifiable media contract and minimize the build accordingly.
+
+Decision:
+
+- Keep the selected H.264/H.265, VP8/VP9, ProRes, DNxHD, FFV1, image-sequence, and audio workflows. Explicitly configure FFmpeg components with `--disable-everything`; retain local file and pipe protocols while disabling network and capture devices.
+- Keep the shared runtime. For the final Task 4 capability set, shared vs. static candidates were compared using uncompressed layer totals and gzip-compressed OCI archive sizes. Shared was smaller on both targets: amd64 shared/static were 134,904,320/136,533,504 uncompressed bytes and 48,358,926/49,473,845 compressed archive bytes; arm64 shared/static were 142,494,720/143,355,392 uncompressed bytes and 49,449,712/50,248,983 compressed archive bytes.
+- Enable `--enable-small` by default. It reduced `docker image inspect` size by 15,107,264 bytes on amd64 and 12,178,196 bytes on arm64. Combined ffmpeg/ffprobe executable bytes fell from 53,440,080 to 42,467,408 on amd64 and from 39,147,456 to 31,217,648 on arm64. SIMD and threading remain enabled.
+- Keep generic x86-64-v1 and ARMv8-A CPU baselines provisional pending production-worker inventory. Task 4 media support details and explicit limitations are in [MEDIA_SUPPORT.md](MEDIA_SUPPORT.md).
+
+Affected areas:
+
+- Dockerfile component configuration, new media support contract, README usage, mission, roadmap, and phase plans.
+- No dependency source identities changed. Existing GPL and nonfree licensing constraints remain; distribution rights still require review before publication.
+
+Validation:
+
+- Built shared amd64 and arm64 final capability images, and shared `--enable-small` candidates for both. Final small candidate image identities: amd64 `sha256:f89eb978d4a053b0caf20a2ab4c874f15e2c727c8b222d0e8e81cd89f269ce1f`; arm64 `sha256:f2ca007b684a9df631c766cc7a88e6f26b45c873ad486a53b65a097cff277f13`.
+- On both architectures, ran representative VFX media checks listed in [MEDIA_SUPPORT.md](MEDIA_SUPPORT.md), including H.264/AAC MP4, DNxHD and ProRes, EXR/DPX/PNG/TIFF sequences, VP8/VP9 WebM, audio transcodes, filters, mounted files, and pipes. Probes verified output codec, dimensions, pixel format, frame rate, duration, alpha samples, and sequence frame counts where applicable.
+- Compared ordinary and `--enable-small` amd64 builds over three 1080p, 10-second H.264 medium-preset encodes on the local Docker Desktop engine (not a production CPU benchmark). Ordinary elapsed times were 1.580, 1.484, and 1.462 seconds (median 1.484); size-optimized times were 1.458, 1.430, and 1.435 seconds (median 1.435). Both produced 1920×1080, 24 fps, 10-second H.264 output; output sizes were 6,521,985 and 6,521,985 bytes for the ordinary and small candidates respectively. ARM64 size-optimized encode/probe also passed with matching 1920×1080, 24 fps, 10-second H.264 properties; performance was not timed on ARM64.
+- The representative full media matrix was run against the default optimized images before `--enable-small` became the default. The optimization changes compiler size tuning, not the explicit component set; both small candidates passed H.264 encode/probe.
+- The prior Docker inspection reported amd64 static image `.Size` as 49,786,748 bytes, inconsistent with its extracted layer totals; the shared/static decision therefore uses the consistently computed OCI archive/layer measurements above. `docker image inspect` was used only for the within-platform ordinary-vs-small comparison.
+- `git diff --check` passed; plan and roadmap status now agree on Tasks 1–4 completion and Task 5 follow-up.
+
+Follow-up:
+
+- Task 5 remains: add automated dependency-lock, image-size-budget, and representative media checks. Phase 2 remains in progress pending acceptance review. No automated conformance suite, third-party application interoperability check, or colorimetric reference test exists yet.
+
 ## 2026-10-25: Minimize Runtime Contents (Initial Capability Set)
 
 Request:
