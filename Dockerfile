@@ -93,13 +93,18 @@ RUN cd ~/ffmpeg_sources/libvpx && \
 	make install
 
 # Install ffmpeg
-RUN cd ~/ffmpeg_sources/ffmpeg && \
+ARG EXTRA_LDEXEFLAGS=""
+RUN if [ "$EXTRA_LDEXEFLAGS" = "-static" ]; then \
+        sed -i 's/-lgcc_s//g' "$HOME/ffmpeg_build/lib/pkgconfig/x265.pc"; \
+    fi; \
+    cd ~/ffmpeg_sources/ffmpeg && \
 	PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
   --prefix="$HOME/ffmpeg_build" \
   --cpu=generic \
   --pkg-config-flags="--static" \
   --extra-cflags="-I$HOME/ffmpeg_build/include" \
   --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+  --extra-ldexeflags="$EXTRA_LDEXEFLAGS" \
   --extra-libs=-lpthread \
   --extra-libs=-lm \
   --bindir="$HOME/bin" \
@@ -111,12 +116,25 @@ RUN cd ~/ffmpeg_sources/ffmpeg && \
   --enable-libvpx \
   --enable-libx264 \
   --enable-libx265 \
-  --enable-nonfree && \
+  --enable-nonfree || { tail -n 80 ffbuild/config.log; exit 1; }; \
 	make && \
 	make install && \
 	hash -r
 
-# Remove source directory and clean yum
+# Keep diagnostic binaries in the builder, but ship only the stripped FFmpeg CLI tools and source notices.
+COPY scripts/collect_licenses.py /tmp/collect_licenses.py
+RUN set -eu; \
+    mkdir -p /root/ffmpeg_runtime/bin /root/ffmpeg_runtime/share/licenses /root/ffmpeg_diagnostics; \
+    cp "$HOME/bin/ffmpeg" "$HOME/bin/ffprobe" /root/ffmpeg_diagnostics/; \
+    cp "$HOME/bin/ffmpeg" "$HOME/bin/ffprobe" /root/ffmpeg_runtime/bin/; \
+    for source in ffmpeg nasm x264 x265 fdk-aac lame opus libogg libvorbis libvpx; do \
+        license_dir="/root/ffmpeg_runtime/share/licenses/$source"; \
+        mkdir -p "$license_dir"; \
+        python3 /tmp/collect_licenses.py "$HOME/ffmpeg_sources/$source" "$license_dir"; \
+    done; \
+    strip --strip-unneeded /root/ffmpeg_runtime/bin/ffmpeg /root/ffmpeg_runtime/bin/ffprobe
+
+# Remove source trees and static build dependencies after capturing the runtime artifacts.
 RUN rm -r ~/ffmpeg_sources ~/ffmpeg_build
 
 FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS runtime-image
@@ -124,5 +142,6 @@ FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20b
 RUN test "$(dpkg-query -W -f='${Version}' bash)" = '5.2.37-2+b10' && \
     printf '%s\n' 'export PATH="/root/bin:$PATH"' > /etc/profile.d/ffmpeg-path.sh
 
-COPY --from=compile-image /root/bin /root/bin
+COPY --from=compile-image /root/ffmpeg_runtime/bin /root/bin
+COPY --from=compile-image /root/ffmpeg_runtime/share/licenses /usr/share/doc/ffmpeg-build/licenses
 ENV PATH=/root/bin:$PATH

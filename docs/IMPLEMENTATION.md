@@ -2,6 +2,45 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-25: Minimize Runtime Contents (Initial Capability Set)
+
+Request:
+
+- Complete phase 3 Task 3 for the `linux/amd64` and `linux/arm64` images.
+
+Decision:
+
+- Build an explicit runtime artifact directory containing only `ffmpeg`, `ffprobe`, and collected license/notice files. Preserve Bash and the pinned Debian runtime base. Keep diagnostic copies in the compile stage, outside the final image, and explicitly strip the shipped executables.
+- Compare the existing dynamic-linked build with a fully static FFmpeg link on both architectures. Select the shared candidate as the initial runtime: it has the smaller compressed transfer size on both platforms, and is also smaller by total image bytes on amd64. The static arm64 image is 309,358 bytes smaller uncompressed, but 495,964 bytes larger compressed.
+- Retain the full configured codec set because Task 4 has not yet established which media capabilities may be removed. The initial selection is provisional until Task 4's matrix is tested and Task 3 is repeated.
+
+Affected areas:
+
+- Dockerfile, license collection helper, phase 3 plan, and this log.
+
+Validation and measurements:
+
+| Platform / candidate | Image identity | Total image bytes (`docker image inspect`) | Gzip `docker image save` bytes | ffmpeg / ffprobe bytes |
+| --- | --- | ---: | ---: | ---: |
+| amd64 baseline (`task2-amd64`) | `sha256:3c5962bbeca8509f17864a054d7f956ecdb07ae4e2cbb25c058edd05c4905262` | 257,143,506 | 69,003,608 | 45,223,256 / 45,010,104 |
+| amd64 shared (`task3-shared-amd64`) | `sha256:6ded3e9d913bef8c34d7c9cc2b97ed263114baffc342566dda46d270452e06f2` | 244,556,814 | 65,916,674 | 45,223,256 / 45,010,104 |
+| amd64 static (`task3-static-amd64`) | `sha256:84d0ff0438059ef3201b3d39fa07e0f4e546c0c36a4dca9f6b1296590f76a67e` | 245,297,566 | 66,704,327 | 45,215,232 / 45,010,368 |
+| arm64 baseline (`task2-arm64`) | `sha256:f725177a158679cdc35b4ce9026a8803a7348c6edf582fb444a91c2d2dd385d5` | 259,989,041 | 69,747,762 | 35,536,112 / 35,339,392 |
+| arm64 shared (`task3-shared-arm64`) | `sha256:f7906e15be0f47aa973959cc2879ff91b342ed827feec28a8d68e69cc47383ac` | 247,988,492 | 66,773,180 | 35,536,112 / 35,339,392 |
+| arm64 static (`task3-static-arm64`) | `sha256:7b340590e42495f0a553cdc3042fda56d413b92ae1b1f5ea496390c263545ce1` | 247,679,134 | 67,269,144 | 35,150,152 / 34,953,512 |
+
+- Compared to baseline, the selected shared image reduces total image bytes by 12,586,692 (4.9%) on amd64 and 12,000,549 (4.6%) on arm64; gzip transfer bytes fall by 3,086,934 (4.5%) and 2,974,582 (4.3%), respectively.
+- Baseline layer history included `/root/bin` at 100 MB (amd64) and 80.2 MB (arm64), containing FFmpeg, FFprobe, NASM, ndisasm, x264, and LAME. The selected images contain only FFmpeg and FFprobe in `/root/bin` (90.2 MB amd64, 70.9 MB arm64) and 340 kB of license/notice files. The pinned Debian base and Bash remain.
+- `ldd` on shared executables resolved all dynamic libraries. FFmpeg required the system loader plus libc, libm, zlib, bzip2, libmvec, libgcc_s, and libstdc++; FFprobe had the corresponding resolved set (the amd64 FFprobe did not need libgcc_s). Static executables report `not a dynamic executable`. No missing libraries were reported.
+- The static x265 link initially failed because x265's pkg-config metadata requested `-lgcc_s`, for which the pinned Debian builder has no static archive. The static-only build removes that token; static builds then completed. Static linking reduced arm64 executable size modestly but increased compressed image size on both platforms.
+- On both architectures, mounted-media H.264 read/write roundtrips passed; FFprobe confirmed H.264, 128x128, 24 fps, and 1 second. FFmpeg and FFprobe report version 8.1.3, Bash login access resolves both, and NASM, ndisasm, x264, LAME, gcc, and g++ are absent from runtime.
+- License collection found 23 notice files across FFmpeg and the nine locked source dependencies. The build retains the Debian CA certificates and system runtime data. Fonts and any additional capability-specific data are not yet classified because Task 4's media matrix is undefined.
+- `git diff --check` passed. Binary stripping is applied in the artifact assembly step; current binary sizes match the pre-task builds for shared candidates, indicating the upstream install output was already stripped. Static candidates are slightly smaller due to link contents, not an additional stripping reduction.
+
+Follow-up:
+
+- Define and test the required media/data matrix in Task 4, then repeat runtime size, linkage, and mounted-media validation. Do not treat the current shared selection as final until that comparison is complete.
+
 ## 2026-10-25: Pin The Build Environment
 
 Request:

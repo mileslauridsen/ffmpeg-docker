@@ -9,8 +9,8 @@ Produce the smallest measured FFmpeg runtime image that meets the documented VFX
 - The Dockerfile separates compilation and runtime stages and now uses a digest-pinned Debian 13 Trixie base for amd64 and arm64 targets.
 - FFmpeg and its nine source dependencies now have immutable identities, archive checksums, and signature checks where available.
 - Debian package resolution and the builder toolchain are snapshot-pinned for amd64 and arm64; see [build environment](../BUILD_ENVIRONMENT.md).
-- The runtime copies all of `/root/bin`, including installed assembler tools, rather than an explicit runtime artifact set.
-- Configured encoders and one H.264 workflow have been verified. Broader required media profiles, runtime linkage, and image sizes remain unmeasured.
+- The runtime now copies only `ffmpeg` and `ffprobe` from an explicit artifact directory, plus source license notices. NASM, codec CLI tools, headers, archives, sources, and build caches stay out of the final image.
+- Shared and fully static candidates have been measured for amd64 and arm64. The shared candidate is selected for this initial capability set; Task 4 must define broader media requirements and repeat the comparison.
 - No automated size, dependency-lock, or reproducibility checks exist.
 
 ## Decisions And Boundaries
@@ -70,15 +70,15 @@ Completion evidence: two clean builds each of `linux/amd64` and `linux/arm64` us
 
 Deliverable: a measured runtime choice and an explicit artifact-copy policy.
 
-- [ ] 1. Measure the current working baseline: total uncompressed image bytes, compressed transfer size when available, executable sizes, and layer contents. Record platform and image identity with every result.
-- [ ] 2. Inspect executable dependencies with ELF inspection tools in the builder. Enumerate required loaders, shared libraries, certificates, fonts, and other data from the capability matrix; do not infer full static linkage from pkg-config flags.
-- [ ] 3. Create an explicit output directory containing only `ffmpeg`, `ffprobe`, required runtime dependencies, and required notices. Exclude NASM, Yasm, codec CLI tools, headers, static archives, sources, and build caches.
-- [ ] 4. Build a minimal shared-library runtime candidate and a fully static candidate where supported by the selected libraries. If a candidate is infeasible, record the failing evidence rather than claiming a size comparison.
-- [ ] 5. Strip shipping binaries while retaining diagnostic artifacts outside the runtime image. Measure the total image; account for duplicated library code in separate static executables.
-- [ ] 6. Test mounted-media reads and writes, both command-line tools, required runtime data, and Bash access. For a shell-free candidate, resolve the documented Bash compatibility decision before selecting it as production output.
-- [ ] 7. Select the smallest passing candidate, record the comparison and rejected alternatives, and copy only its verified artifacts into the final stage. Repeat after task 4.
+- [x] 1. Measure the working baseline and both runtime candidates: total image bytes, gzip-compressed `docker image save` size, executable sizes, and layer contents. Record platform and image identity with every result in the implementation log.
+- [x] 2. Inspect runtime linkage using `ldd` on each architecture and verify static candidates report no dynamic executable. The shared runtime uses Debian's loader and resolved shared libraries; broader certificates, fonts, and data requirements remain subject to Task 4's capability matrix.
+- [x] 3. Create an explicit output directory containing only `ffmpeg`, `ffprobe`, and collected source license notices. Exclude NASM, codec CLI tools, headers, static archives, sources, and build caches.
+- [x] 4. Build and compare shared and fully static runtime candidates for both architectures. The static x265 link needed removal of an unavailable `-lgcc_s` pkg-config token; the resulting builds and runtime checks passed.
+- [x] 5. Strip shipping binaries and retain diagnostic copies in the compile stage outside the runtime image. Compare total image sizes for shared and static links; the small static executable reduction does not offset its larger compressed image transfer.
+- [x] 6. Test mounted-media reads and writes, both command-line tools, H.264 output properties, absence of build tools, and Bash access on amd64 and arm64. Broader runtime data tests await Task 4's capability matrix.
+- [x] 7. Select the shared candidate for the initial capability set based on the smaller compressed transfer size on both platforms, record the comparison and static alternative, and copy only verified runtime artifacts into the final stage. Repeat after Task 4.
 
-Completion evidence: a before/after table using consistent size metrics, a runtime-content inventory, passing runtime checks, and no compiler or assembler tools in the production image.
+Completion evidence: initial before/after and shared/static measurements, runtime-content inventory, passing smoke checks, and no compiler or assembler tools in the production image are recorded in the implementation log. Final selection is provisional until Task 4 defines and validates the capability matrix; repeat the comparison then.
 
 ### Task 4: Define And Minimize Media Capabilities
 
@@ -137,6 +137,6 @@ Completion evidence: CI catches an invalid checksum, a missing required capabili
 
 Status: in progress
 
-Tasks 1 and 2 are complete for `linux/amd64` and `linux/arm64`. Task 2 uses provisional generic CPU baselines pending production-worker inventory; CI is not configured. Broader VFX media profiles remain undefined and are assigned to Task 4. The CentOS 7 baseline failed at package setup on both architectures; phase 2 remains in progress. See the implementation log.
+Tasks 1 and 2 are complete for `linux/amd64` and `linux/arm64`; Task 3's initial runtime comparison and selection are complete, pending repetition after Task 4. Task 2 uses provisional generic CPU baselines pending production-worker inventory; CI is not configured. Broader VFX media profiles remain undefined and are assigned to Task 4. The CentOS 7 baseline failed at package setup on both architectures; phase 2 remains in progress. See the implementation log.
 
 Last updated: 2026-10-25
