@@ -2,6 +2,25 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-31: Complete Phase 2 Acceptance Review
+
+Request:
+
+- Review the recorded Phase 2 evidence and mark build verification complete.
+
+Decision:
+
+- Phase 2 acceptance criteria are met for both `linux/amd64` and `linux/arm64`. The CentOS 7 package-repository failure is recorded; the Debian 13 replacement builds, runtime executables and configured encoders, mounted H.264 encode/probe, Bash access, and representative media workflows all passed.
+- The hosted GitHub Actions run is Phase 3 CI evidence and is not a prerequisite for Phase 2 acceptance. Phase 3 remains in progress pending hosted workflow confirmation and production-worker CPU baseline review.
+
+Affected areas:
+
+- Phase 2 plan status, roadmap phase status, and this implementation log.
+
+Validation:
+
+- Reviewed Phase 2 acceptance criteria against the recorded amd64 and arm64 replacement build and runtime results in the Phase 2 plan and preceding Task 4 and Task 5 validation entries.
+
 ## 2026-10-31: Resolve Cold-Build Timestamp Differences
 
 Request:

@@ -10,9 +10,9 @@ This is the high-level direction for ffmpeg-docker. Detailed execution belongs i
 
 ## Current Direction
 
-- The project playbook is adopted. CentOS 7 failed on both ARM64 and amd64. The replacement Debian 13 image builds and passes representative VFX media workflows on both `linux/amd64` and `linux/arm64`; phase 3 Tasks 1–4 lock sources and build inputs, minimize runtime components, and document the tested media contract. Task 5 automation remains.
+- The project playbook is adopted. Phase 2 acceptance is complete: CentOS 7 failed on both ARM64 and amd64, while the Debian 13 replacement builds and passes the recorded runtime checks on both `linux/amd64` and `linux/arm64`. Phase 3 locks sources and build inputs, minimizes runtime components, documents the tested media contract, and automates validation; local cold-build pairs pass while hosted Actions confirmation remains pending.
 - Establish a measured baseline before selecting a replacement base image, updating codec versions, or changing supported platforms.
-- Use phase 2 evidence to execute the five modernization tasks in phase 3. Phase 2 remains incomplete; phase 3 is in progress with locked sources and build environment. The modernization plan defines a handoff when the legacy build cannot proceed reasonably.
+- Use the Phase 2 evidence to execute the five modernization tasks in Phase 3. Phase 3 is in progress with locked sources and build environment; its modernization plan records the handoff from the unbuildable legacy recipe.
 - Retain the two-stage build model and direct FFmpeg CLI workflow.
 - Track further work in the phase plans rather than maintaining a duplicate backlog.
 
@@ -28,7 +28,7 @@ build: define compatibility -> inspect dependencies -> build -> inspect tools ->
 | Phase | Status | Plan | Outcome |
 | --- | --- | --- | --- |
 | 1. Project playbook | complete | [Plan](plans/01-project-playbook.md) | Project guidance, workflow, mission, roadmap, plans, and log adopted. |
-| 2. Build verification | in progress | [Plan](plans/02-build-verification.md) | CentOS 7 package-repository failures are recorded for both architectures; replacement builds and the Task 4 representative media checks pass; phase 2 acceptance review remains. |
+| 2. Build verification | complete | [Plan](plans/02-build-verification.md) | CentOS 7 package-repository failures and successful Debian replacement verification are recorded for both architectures; acceptance review complete. |
 | 3. Small image and deterministic dependencies | in progress | [Plan](plans/03-small-deterministic-image.md) | Tasks 1–5 cold-build checks are complete for both targets; hosted CI execution remains pending. Generic CPU baselines remain provisional. |
 
 ## Assumptions

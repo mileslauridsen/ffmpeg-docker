@@ -9,7 +9,7 @@ Establish and document a working build and runtime baseline for the FFmpeg image
 - The initial Dockerfile used `centos:centos7`; its package repositories failed for ARM64 and amd64. The replacement build and runtime stages now use Debian 13 Trixie pinned by digest.
 - Codec libraries and FFmpeg now use the pinned source manifest described in [phase 3](03-small-deterministic-image.md).
 - The runtime stage copies only the verified FFmpeg executables and source notices. Shared-library requirements were inspected and the shared runtime was exercised on both target architectures.
-- No automated build or media smoke checks are present.
+- Phase 3 adds automated lock, image, media, size-budget, and reproducibility checks; the baseline failure and replacement verification evidence remain recorded here and in the implementation log.
 - The Docker daemon and ARM64 Linux engine were reached on 2026-10-25. CentOS 7 builds failed at `yum update` for both ARM64 and amd64 because the configured mirrorlist/base URL was unavailable. The replacement Debian 13 builds completed for both architectures; see the [implementation log](../IMPLEMENTATION.md). Mounted H.264 encode/probe and login Bash checks passed on both.
 
 ## Decisions And Boundaries
@@ -75,8 +75,8 @@ Inspect the probe output for H.264 video, 128x128 dimensions, 24 fps, and approx
 
 ## Status
 
-Status: in progress
+Status: complete
 
-The targets are `linux/amd64` and `linux/arm64`; replacement builds, CLI startup, configured encoder inventory, mounted H.264 smoke tests, login Bash checks, and the phase 3 Task 4 representative media matrix passed on both. Phase 2 remains in progress pending an acceptance review of its legacy baseline and recorded replacement evidence.
+Acceptance review complete. The CentOS 7 package-repository failure is documented for both targets. The Debian 13 replacement builds, CLI startup, configured encoder inventory, mounted H.264 encode/probe, login Bash checks, and Phase 3 Task 4 representative media matrix passed on both `linux/amd64` and `linux/arm64`. The Phase 3 hosted Actions run is separate and is not a Phase 2 completion requirement.
 
-Last updated: 2026-10-27
+Last updated: 2026-10-31
