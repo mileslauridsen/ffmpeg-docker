@@ -55,6 +55,15 @@
     },
     "buildx_cli": "0.37.2",
     "local_docker_engine_observed": "29.8.2",
-    "ci": "No CI workflow is currently configured. Use the pinned BuildKit container and the documented Buildx CLI version when CI is added."
+    "ci": "GitHub Actions runs the pinned Buildx CLI and BuildKit container on GitHub-hosted Ubuntu 24.04 amd64 and arm64 runners.",
+    "github_actions": {
+      "checkout": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 (v7.0.1)",
+      "setup_buildx": "docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 (v4.4.1)",
+      "upload_artifact": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 (v4.6.2)",
+      "runners": {
+        "linux/amd64": "ubuntu-24.04",
+        "linux/arm64": "ubuntu-24.04-arm"
+      }
+    }
   }
 }

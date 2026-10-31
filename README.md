@@ -6,7 +6,7 @@ FFmpeg command-line tools for VFX and media conversion workflows. The supported 
 Create the pinned BuildKit builder described in [Build Environment](docs/BUILD_ENVIRONMENT.md), then build for one target:
 
 ```sh
-docker buildx build --builder ffmpeg-pinned --platform=linux/amd64 --load -t vfx/ffmpeg .
+docker buildx build --builder ffmpeg-pinned --platform=linux/amd64 --build-arg SOURCE_DATE_EPOCH=0 --load -t vfx/ffmpeg .
 ```
 
 Use `--platform=linux/arm64` for the ARM64 image.
@@ -31,6 +31,7 @@ docker run --rm -v "$PWD/media:/media" vfx/ffmpeg ffmpeg -i /media/input.mov /me
 - [Source provenance](docs/SOURCE_PROVENANCE.md): locked archive identities and checksum evidence.
 - [Build environment](docs/BUILD_ENVIRONMENT.md): fixed OS packages, toolchain, CPU baselines, and Docker build tools.
 - [Media support](docs/MEDIA_SUPPORT.md): tested formats, codecs, workflows, and explicit exclusions.
+- [Automated validation](docs/BUILD_ENVIRONMENT.md#automated-validation): lock, runtime, media, size-budget, and cold-build checks.
 - [Agent guidance](AGENTS.md): project orientation and working loop.
 
 The project roadmap and task state are in [docs/ROADMAP.md](docs/ROADMAP.md). Task 4's representative workflow evidence and known limits are recorded in [docs/MEDIA_SUPPORT.md](docs/MEDIA_SUPPORT.md) and [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).

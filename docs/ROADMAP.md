@@ -29,7 +29,7 @@ build: define compatibility -> inspect dependencies -> build -> inspect tools ->
 | --- | --- | --- | --- |
 | 1. Project playbook | complete | [Plan](plans/01-project-playbook.md) | Project guidance, workflow, mission, roadmap, plans, and log adopted. |
 | 2. Build verification | in progress | [Plan](plans/02-build-verification.md) | CentOS 7 package-repository failures are recorded for both architectures; replacement builds and the Task 4 representative media checks pass; phase 2 acceptance review remains. |
-| 3. Small image and deterministic dependencies | in progress | [Plan](plans/03-small-deterministic-image.md) | Tasks 1–4 are complete for both targets; Task 5 automation remains. Generic CPU baselines remain provisional pending production-worker inventory. |
+| 3. Small image and deterministic dependencies | in progress | [Plan](plans/03-small-deterministic-image.md) | Tasks 1–5 cold-build checks are complete for both targets; hosted CI execution remains pending. Generic CPU baselines remain provisional. |
 
 ## Assumptions
 

@@ -2,6 +2,64 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-31: Resolve Cold-Build Timestamp Differences
+
+Request:
+
+- Address the failed amd64 cold-build comparison, which showed different FFmpeg/FFprobe hashes and rootfs content but did not identify differing rootfs paths.
+
+Decision:
+
+- Set `SOURCE_DATE_EPOCH=0` for BuildKit image/layer timestamps and compiler inputs; set the compile environment locale and timezone to `C` and UTC. The cold-build helper passes the same fixed epoch to each build.
+- The path-level report showed that executable and library contents matched, while build-time mtimes differed on runtime files and created directories. It also exposed container-created paths (`.dockerenv`, `/etc/hosts`, `/dev`, and Rosetta mount paths) that must be omitted from the image comparison.
+- Normalize mtimes on the final runtime artifacts, licenses, profile script, affected parent directories, and entries under `/root/.cache` in the runtime layer. Image-layer inspection identified Docker Desktop's injected `/root/.cache/rosetta` directory as a source of build-time mtime differences.
+- `docker export` changes the `/etc` directory mtime when it mounts `/etc/hosts`, `/etc/hostname`, and `/etc/resolv.conf`. Ignore only the `/etc` directory entry in the exported-rootfs comparison; continue checking all paths beneath it. Independently compare saved image config and manifest digests to detect real layer differences.
+
+Affected areas:
+
+- Dockerfile runtime artifact assembly and `scripts/reproducible_build.py` path and digest diagnostics.
+
+Validation:
+
+- Buildx Dockerfile check, Python byte-compilation, lock validation, CI YAML parsing, and `git diff --check` passed.
+- Fresh amd64 pair after normalization: runtime executable/library hashes, image config digests, image IDs, and manifest digests matched exactly. The saved runtime layer contents also matched; `docker export` reported only a changed `/etc` directory mtime due to its resolver-file mounts. The checker now skips that directory entry and still compares its contents. Re-running the checker against both cold-built images produced no rootfs differences.
+- Fresh arm64 pair: runtime executable/library hashes, config digests, image IDs, manifest digests, and rootfs comparison all matched. The first attempt stopped on a transient TLS EOF fetching Opus; the unchanged cold pair passed on retry.
+- Final image validation and the representative media matrix passed on both cold-built images. Image sizes are 175,055,727 / 180,000,000 bytes for amd64 and 186,721,570 / 192,000,000 bytes for arm64.
+
+Follow-up:
+
+- Task 5 steps 5–7 are supported by successful cold pairs on both architectures. A hosted GitHub Actions workflow run remains pending.
+
+## 2026-10-29: Implement Phase 3 Task 5 Automation
+
+Request:
+
+- Add repeatable lock, runtime, media, image-size, CI, and clean-build reproducibility checks for both supported platforms.
+
+Decision:
+
+- Use deterministic, redistributable PNG/WAV fixtures. Their decoded RGB/RGBA pixels, PCM samples, and identity LUT have fixed SHA-256 identities; inputs use only formats enabled in the runtime build.
+- Validate the source/toolchain lock structure, HTTPS identities, per-platform Debian package manifests, pinned Actions SHAs, and checksum rejection before extraction. Validate runtime FFmpeg identity/configuration, shared-library resolution, absence of build tools, architecture, and per-platform image size.
+- Set `docker image inspect .Size` budgets at 180,000,000 bytes for amd64 and 192,000,000 bytes for arm64, based on the final Task 4 optimized images plus a small change margin.
+- Add GitHub Actions cached builds and runtime checks on pull requests and `main`; schedule weekly and manual pairs of independent cold builds. Use pinned actions, Buildx `v0.37.2`, BuildKit `v0.33.1` by digest, and native amd64/arm64 hosted runners.
+- Compare executable/shared-library hashes and canonical root-filesystem content/metadata separately from Docker config and manifest digest equality. CI artifacts retain lock identities, configure flags, build metadata, image sizes, and media probe results.
+
+Affected areas:
+
+- New `scripts/generate_test_media.py`, `scripts/validate_lock.py`, `scripts/validate_image.py`, `scripts/smoke_media.py`, and `scripts/reproducible_build.py`; per-platform size budgets; pinned workflow; `.dockerignore`; toolchain lock; build and validation documentation.
+
+Validation:
+
+- `scripts/validate_lock.py` passed: all ten source identities and both architecture package manifests are complete; the corrupt archive was rejected before extraction.
+- Python syntax validation, Ruby YAML parsing of the workflow, and `git diff --check` passed.
+- The runtime validator passed on amd64 (`sha256:f89eb978d4a053b0caf20a2ab4c874f15e2c727c8b222d0e8e81cd89f269ce1f`, 175,067,567 / 180,000,000 bytes) and arm64 (`sha256:f2ca007b684a9df631c766cc7a88e6f26b45c873ad486a53b65a097cff277f13`, 186,725,326 / 192,000,000 bytes). Both had resolved runtime libraries and no build tools.
+- All 29 scripted media assertions passed on both images, including codec/container encodes, alpha preservation, EXR half/float, DPX/TIFF/JPEG/PNG, sequences, filters, audio formats, mounted files, and pipes. Fixture identities and output probe metadata were written for both platforms.
+- The GitHub-hosted workflow has not run yet. A no-cache amd64 comparison with epoch/locale controls completed: FFmpeg/FFprobe and shared-library hashes matched, while file contents/modes matched but mtimes differed. The old container export also included transient Docker/Rosetta paths; the updated checker filters those and now checks uid/gid and timestamps. Fresh post-normalization cold pairs subsequently passed on both architectures; see the 2026-10-31 entry above.
+
+Follow-up:
+
+- Run the workflow on GitHub after the branch is available there.
+
 ## 2026-10-27: Complete Phase 3 Task 4 Media Capabilities
 
 Request:

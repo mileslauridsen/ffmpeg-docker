@@ -2,7 +2,7 @@
 
 Provide a containerized FFmpeg command-line environment for visual effects artists and pipeline developers to convert, encode, and inspect media without installing its build dependencies on every workstation or worker.
 
-The intended outcome is an image whose supported codecs, build inputs, and runtime behavior are documented and verified. The supported media contract is recorded in [MEDIA_SUPPORT.md](MEDIA_SUPPORT.md); representative workflows have been built and exercised on both target architectures. Automated CI and reproducible binary/image claims remain future work.
+The intended outcome is an image whose supported codecs, build inputs, and runtime behavior are documented and verified. The supported media contract is recorded in [MEDIA_SUPPORT.md](MEDIA_SUPPORT.md); representative workflows have been built and exercised on both target architectures. A pinned CI workflow is configured to build and inspect each target; byte-identical reproducibility remains unclaimed until independent cold-build results confirm it.
 
 ## Development Loop
 

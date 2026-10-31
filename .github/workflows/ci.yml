@@ -1,0 +1,129 @@
+name: FFmpeg build verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lock-validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate locked build inputs and checksum rejection
+        run: python3 scripts/validate_lock.py
+      - name: Check Python syntax
+        run: python3 -m py_compile scripts/*.py build/*.py
+
+  image-validation:
+    if: github.event_name != 'schedule'
+    needs: lock-validation
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up pinned Buildx and BuildKit
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          name: ffmpeg-pinned-${{ matrix.arch }}
+          version: v0.37.2
+          driver-opts: image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
+      - name: Build image with GitHub Actions cache
+        env:
+          BUILDER: ffmpeg-pinned-${{ matrix.arch }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+          IMAGE: vfx/ffmpeg:ci-${{ matrix.arch }}
+          REVISION: ${{ github.sha }}
+          CACHE_SCOPE: ffmpeg-${{ matrix.arch }}-${{ github.event.pull_request.number || 'main' }}
+        run: |
+          docker buildx build \
+            --builder "$BUILDER" \
+            --platform "$PLATFORM" \
+            --target runtime-image \
+            --build-arg ENABLE_SMALL=1 \
+            --build-arg SOURCE_DATE_EPOCH=0 \
+            --cache-from "type=gha,scope=$CACHE_SCOPE" \
+            --cache-to "type=gha,scope=$CACHE_SCOPE,mode=max" \
+            --metadata-file "$RUNNER_TEMP/build-metadata.json" \
+            --load \
+            --tag "$IMAGE" \
+            .
+          python3 scripts/validate_image.py \
+            --image "$IMAGE" \
+            --platform "$PLATFORM" \
+            --metadata "artifacts/build-$ARCH.json" \
+            --revision "$REVISION"
+          python3 scripts/smoke_media.py \
+            --image "$IMAGE" \
+            --platform "$PLATFORM" \
+            --fixtures "$RUNNER_TEMP/ffmpeg-media-$ARCH" \
+            --metadata "artifacts/media-$ARCH.json"
+          cp build/dependencies.lock.json artifacts/
+          cp build/toolchain.lock.json artifacts/
+          cp build/apt/builder-"$ARCH".packages artifacts/
+          cp build/apt/resolved-"$ARCH".packages artifacts/
+          cp "$RUNNER_TEMP/build-metadata.json" "artifacts/buildx-$ARCH.json"
+      - name: Upload build and media metadata
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ffmpeg-build-${{ matrix.arch }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  cold-reproducibility:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: lock-validation
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 240
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up pinned Buildx and BuildKit
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          name: ffmpeg-pinned-${{ matrix.arch }}
+          version: v0.37.2
+          driver-opts: image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
+      - name: Build twice without layer cache and compare artifacts
+        run: >-
+          python3 scripts/reproducible_build.py
+          --platform ${{ matrix.platform }}
+          --builder ffmpeg-pinned-${{ matrix.arch }}
+          --metadata reproducibility-${{ matrix.arch }}.json
+      - name: Upload reproducibility report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ffmpeg-reproducibility-${{ matrix.arch }}
+          path: reproducibility-${{ matrix.arch }}.json
+          if-no-files-found: warn

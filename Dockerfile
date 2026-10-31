@@ -1,10 +1,14 @@
 # syntax=docker/dockerfile:1.7.1@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
+ARG SOURCE_DATE_EPOCH=0
+
 # Debian 13 (Trixie) multi-platform index pinned to sha256:62bd423a.
 FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS compile-image
 
+ARG SOURCE_DATE_EPOCH
 ARG TARGETARCH
 ENV PATH="/root/bin:${PATH}"
+ENV LC_ALL=C LANG=C TZ=UTC
 COPY build /build
 
 # Use the immutable Debian archive state and install the exact, architecture-specific package closure.
@@ -263,16 +267,26 @@ RUN set -eu; \
         mkdir -p "$license_dir"; \
         python3 /tmp/collect_licenses.py "$HOME/ffmpeg_sources/$source" "$license_dir"; \
     done; \
-    strip --strip-unneeded /root/ffmpeg_runtime/bin/ffmpeg /root/ffmpeg_runtime/bin/ffprobe
+    strip --strip-unneeded /root/ffmpeg_runtime/bin/ffmpeg /root/ffmpeg_runtime/bin/ffprobe; \
+    find /root/ffmpeg_runtime -depth -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 
 # Remove source trees and static build dependencies after capturing the runtime artifacts.
 RUN rm -r ~/ffmpeg_sources ~/ffmpeg_build
 
 FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS runtime-image
 
-RUN test "$(dpkg-query -W -f='${Version}' bash)" = '5.2.37-2+b10' && \
-    printf '%s\n' 'export PATH="/root/bin:$PATH"' > /etc/profile.d/ffmpeg-path.sh
-
-COPY --from=compile-image /root/ffmpeg_runtime/bin /root/bin
-COPY --from=compile-image /root/ffmpeg_runtime/share/licenses /usr/share/doc/ffmpeg-build/licenses
+ARG SOURCE_DATE_EPOCH
+RUN --mount=from=compile-image,source=/root/ffmpeg_runtime/bin,target=/mnt/ffmpeg-bin \
+    --mount=from=compile-image,source=/root/ffmpeg_runtime/share/licenses,target=/mnt/ffmpeg-licenses \
+    set -eu; \
+    test "$(dpkg-query -W -f='${Version}' bash)" = '5.2.37-2+b10'; \
+    mkdir -p /root/bin /root/.cache /usr/share/doc/ffmpeg-build/licenses /etc/profile.d; \
+    cp -a /mnt/ffmpeg-bin/. /root/bin/; \
+    cp -a /mnt/ffmpeg-licenses/. /usr/share/doc/ffmpeg-build/licenses/; \
+    printf '%s\n' 'export PATH="/root/bin:$PATH"' > /etc/profile.d/ffmpeg-path.sh; \
+    find /root/bin /usr/share/doc/ffmpeg-build/licenses /etc/profile.d/ffmpeg-path.sh \
+        -depth -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +; \
+    find /root/.cache -depth -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +; \
+    touch -h -d "@$SOURCE_DATE_EPOCH" /etc /root/.cache /root /usr /usr/share /usr/share/doc \
+        /usr/share/doc/ffmpeg-build /etc/profile.d
 ENV PATH=/root/bin:$PATH
