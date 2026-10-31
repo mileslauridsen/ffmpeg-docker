@@ -10,7 +10,7 @@ This is the high-level direction for ffmpeg-docker. Detailed execution belongs i
 
 ## Current Direction
 
-- The project playbook is adopted. Phase 2 acceptance is complete: CentOS 7 failed on both ARM64 and amd64, while the Debian 13 replacement builds and passes the recorded runtime checks on both `linux/amd64` and `linux/arm64`. Phase 3 locks sources and build inputs, minimizes runtime components, documents the tested media contract, and automates validation; local cold-build pairs pass while hosted Actions confirmation remains pending.
+- The project playbook is adopted. Phase 2 acceptance is complete: CentOS 7 failed on both ARM64 and amd64, while the Debian 13 replacement builds and passes the recorded runtime checks on both `linux/amd64` and `linux/arm64`. Phase 3 locks sources and build inputs, minimizes runtime components, documents the tested media contract, and automates validation. Local cold-build pairs and the hosted push-triggered CI workflow pass on both architectures; the hosted scheduled/manual cold-reproducibility job remains untested.
 - Establish a measured baseline before selecting a replacement base image, updating codec versions, or changing supported platforms.
 - Use the Phase 2 evidence to execute the five modernization tasks in Phase 3. Phase 3 is in progress with locked sources and build environment; its modernization plan records the handoff from the unbuildable legacy recipe.
 - Retain the two-stage build model and direct FFmpeg CLI workflow.
@@ -29,7 +29,7 @@ build: define compatibility -> inspect dependencies -> build -> inspect tools ->
 | --- | --- | --- | --- |
 | 1. Project playbook | complete | [Plan](plans/01-project-playbook.md) | Project guidance, workflow, mission, roadmap, plans, and log adopted. |
 | 2. Build verification | complete | [Plan](plans/02-build-verification.md) | CentOS 7 package-repository failures and successful Debian replacement verification are recorded for both architectures; acceptance review complete. |
-| 3. Small image and deterministic dependencies | in progress | [Plan](plans/03-small-deterministic-image.md) | Tasks 1–5 cold-build checks are complete for both targets; hosted CI execution remains pending. Generic CPU baselines remain provisional. |
+| 3. Small image and deterministic dependencies | in progress | [Plan](plans/03-small-deterministic-image.md) | Local cold-build pairs and hosted push-triggered CI pass on both targets. Scheduled/manual hosted cold-reproducibility execution and pre-deployment production-worker CPU baseline review remain follow-ups. |
 
 ## Assumptions
 

@@ -2,6 +2,26 @@
 
 Record decisions that change project direction, specifications, runtime behavior, tests, validation, dependencies, deployment, or architecture. Link to plans rather than duplicating their details.
 
+## 2026-10-31: Confirm Hosted Push Workflow
+
+Request:
+
+- Record the completed GitHub Actions run after the Task 5 changes were pushed.
+
+Decision:
+
+- Hosted run [41213862878](https://github.com/mileslauridsen/ffmpeg-docker/actions/runs/41213862878) for commit `040762a` completed successfully. Lock validation and image-validation jobs for `linux/amd64` and `linux/arm64` all passed, including their media checks and metadata uploads.
+- The `cold-reproducibility` job was skipped because this was a push event; that job is configured for scheduled and manual runs. Local independent cold pairs already passed for both architectures.
+- Phase 3 remains in progress: the hosted push path is verified, while the scheduled/manual cold workflow has not been exercised and generic CPU baselines still need production-worker confirmation before deployment.
+
+Affected areas:
+
+- Phase 3 plan, roadmap, and mission status.
+
+Validation:
+
+- Queried GitHub Actions run and job results; overall conclusion was `success` for commit `040762a`.
+
 ## 2026-10-31: Complete Phase 2 Acceptance Review
 
 Request:

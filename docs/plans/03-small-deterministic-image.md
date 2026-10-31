@@ -11,7 +11,7 @@ Produce the smallest measured FFmpeg runtime image that meets the documented VFX
 - Debian package resolution and the builder toolchain are snapshot-pinned for amd64 and arm64; see [build environment](../BUILD_ENVIRONMENT.md).
 - The runtime now receives only `ffmpeg` and `ffprobe` from an explicit artifact directory, plus source license notices. The runtime layer normalizes artifact and directory mtimes using the fixed source epoch. NASM, codec CLI tools, headers, archives, sources, and build caches stay out of the final image.
 - Shared and fully static candidates were measured again with the Task 4 media set. Shared linking remains smaller by compressed OCI archive size on both architectures. The default build enables FFmpeg's size optimization; SIMD and threading remain enabled.
-- `scripts/validate_lock.py`, `scripts/validate_image.py`, and `scripts/smoke_media.py` plus a per-platform size budget and GitHub Actions workflow are implemented. The cold-build checker now reports path-level content/metadata differences and exact config/manifest digests. Fresh cold pairs passed on both architectures; hosted workflow execution remains pending.
+- `scripts/validate_lock.py`, `scripts/validate_image.py`, and `scripts/smoke_media.py` plus a per-platform size budget and GitHub Actions workflow are implemented. The cold-build checker now reports path-level content/metadata differences and exact config/manifest digests. Fresh local cold pairs passed on both architectures; the push-triggered hosted workflow also passed on both. The scheduled/manual hosted cold-reproducibility job has not run yet.
 
 ## Decisions And Boundaries
 
@@ -64,7 +64,7 @@ Deliverable: a documented, locked builder environment and explicit target-platfo
 - [x] 6. Pin the Dockerfile frontend and BuildKit image by digest. Record the Buildx version and supported local build commands; CI is not configured in this repository yet.
 - [x] 7. Run two independent `--no-cache` builds for each architecture and compare source, package, base-image, and toolchain identities. Build output bytes are not claimed to be reproducible by this task.
 
-Completion evidence: two clean builds each of `linux/amd64` and `linux/arm64` used identical source, base-image, package, and toolchain identities. Both architecture images pass FFmpeg/FFprobe startup and a one-second H.264 encode/probe. Production worker CPU inventories and CI remain follow-up items; the selected generic baselines are provisional.
+Completion evidence: two clean builds each of `linux/amd64` and `linux/arm64` used identical source, base-image, package, and toolchain identities. Both architecture images pass FFmpeg/FFprobe startup and a one-second H.264 encode/probe. The push-triggered CI run passed on both hosted runners. Production worker CPU inventories remain a pre-deployment follow-up; the selected generic baselines are provisional.
 
 ### Task 3: Minimize Runtime Contents
 
@@ -100,14 +100,14 @@ Deliverable: reusable validation scripts, CI checks, and recorded release/build 
 
 - [x] 1. Turn the phase 2 smoke checks and capability matrix into scripts that assert expected stream properties and exit unsuccessfully on mismatches. Use deterministic redistributable PNG/WAV fixtures whose decoded pixel and sample hashes are fixed.
 - [x] 2. Add checks for lock-manifest completeness, checksum rejection, exact FFmpeg and dependency identities, runtime linkage, and absence of build tools. Inspect runtime artifacts from the builder when the final image lacks a shell. The lock checker and image validator passed locally on both platforms.
-- [x] 3. Add CI build jobs for each supported platform, using pinned actions and toolchain identities. Pull requests and `main` use GitHub Actions BuildKit cache; weekly and manual runs use two cold builds on native per-architecture runners. The workflow is YAML- and lock-validated; a hosted workflow run is pending.
+- [x] 3. Add CI build jobs for each supported platform, using pinned actions and toolchain identities. Pull requests and `main` use GitHub Actions BuildKit cache; weekly and manual runs use two cold builds on native per-architecture runners. Hosted push run [41213862878](https://github.com/mileslauridsen/ffmpeg-docker/actions/runs/41213862878) passed lock validation and both image-validation jobs on commit `040762a`; the scheduled/manual cold-reproducibility job was skipped on this push.
 - [x] 4. Measure final image size with the same metric as task 3 and set a numeric per-platform budget from the measured result. Fail the check on an unreviewed budget overrun; report transfer size separately when available. Budgets use `docker image inspect .Size`: amd64 180,000,000 bytes; arm64 192,000,000 bytes.
 - [x] 5. Build the same revision twice in isolated work directories without reusing compiled artifacts. Compare the hashes of all shipping executables and shared libraries, and publish a useful difference report on failure. Cold pairs passed on amd64 and arm64.
 - [x] 6. Resolve byte differences by controlling build timestamps, `SOURCE_DATE_EPOCH` where supported, source paths, locale, timezone, archive order, and embedded metadata. Do not label differing binary hashes reproducible merely because versions match. Shipping executable and shared-library hashes matched on both platforms.
 - [x] 7. Separately compare image content and Docker config/manifest digests. Normalize layer/config timestamps and account for provenance metadata if image-digest reproducibility is claimed. Report this separately from binary reproducibility. Rootfs content/metadata (excluding the `/etc` directory timestamp altered by `docker export` mounts), config digests, image IDs, and manifest digests matched on both platforms.
 - [x] 8. Record lock identities, target platform, configure flags, artifact hashes, image size, and media-test results as CI artifacts. Document local reproduction and dependency-update commands.
 
-Completion evidence: CI catches an invalid checksum, a missing required capability, a version mismatch, and an image-size overrun. Two independent builds produce identical shipping-binary hashes per platform; image-digest equality is reported separately. Fresh local cold pairs passed on amd64 and arm64; hosted workflow execution remains pending.
+Completion evidence: CI catches an invalid checksum, a missing required capability, a version mismatch, and an image-size overrun. Two independent builds produce identical shipping-binary hashes per platform; image-digest equality is reported separately. Fresh local cold pairs passed on amd64 and arm64, and the hosted push-triggered workflow passed on both targets. The scheduled/manual hosted cold-reproducibility job remains untested.
 
 ## Validation
 
@@ -137,6 +137,6 @@ Completion evidence: CI catches an invalid checksum, a missing required capabili
 
 Status: in progress
 
-Tasks 1–4 are complete for `linux/amd64` and `linux/arm64`; Task 3's final runtime comparison selects shared linking, and `--enable-small` is enabled by default. Task 5 automation and fresh local cold-build reproducibility checks are complete for both architectures; a hosted workflow run remains pending. Task 2 uses provisional generic CPU baselines pending production-worker inventory. The CentOS 7 baseline failed at package setup on both architectures; phase 2 remains in progress. See the implementation log.
+Tasks 1–4 are complete for `linux/amd64` and `linux/arm64`; Task 3's final runtime comparison selects shared linking, and `--enable-small` is enabled by default. Task 5 automation, fresh local cold-build reproducibility checks, and the hosted push-triggered workflow are complete. The scheduled/manual hosted cold-reproducibility job has not run. Task 2's generic CPU baselines remain provisional pending production-worker inventory before deployment. Phase 2 is complete; see the implementation log.
 
 Last updated: 2026-10-31
